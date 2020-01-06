@@ -1,0 +1,21 @@
+{
+  "name": "react-native-swipeable-item",
+  "version": "1.0.0",
+  "description": "Swipeable flatlist row",
+  "main": "index.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "flatlist",
+    "react",
+    "native",
+    "gesture",
+    "swipe",
+    "to",
+    "delete",
+    "swipe"
+  ],
+  "author": "Daniel Merrill",
+  "license": "MIT"
+}
