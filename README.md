@@ -33,7 +33,7 @@ import {
   LayoutAnimation,
   TouchableOpacity,
 } from 'react-native';
-import SwipeRow from './components/SwipeRow';
+import SwipeItem from 'react-native-swipeable-item';
 
 const NUM_ITEMS = 10;
 function getColor(i) {
@@ -53,8 +53,6 @@ class App extends React.Component {
     data: initialData,
   };
 
-  refMap = new Map();
-  openMap = new Map();
 
   deleteItem = item => {
     const updatedData = this.state.data.filter(d => d !== item);
@@ -64,37 +62,25 @@ class App extends React.Component {
   };
 
   renderItem = ({ item, index }) => (
-    <SwipeRow
-      ref={ref => this.refMap.set(item.key, ref)}
+    <SwipeItem
       key={item.key}
+      direction="left"
       underlayWidth={200}
-      swipeThreshold={-150}
-      onOpen={() => this.openMap.set(item.key, true)}
-      onClose={() => this.openMap.set(item.key, false)}
       renderUnderlay={() => {
         return (
           <View style={styles.underlay}>
             <TouchableOpacity onPress={() => this.deleteItem(item)}>
-              <Text style={styles.text}>DEL</Text>
+              <Text style={styles.text}>{`[x]`}</Text>
             </TouchableOpacity>
           </View>
         );
       }}>
       <View
-        style={{ flexDirection: 'row', backgroundColor: item.backgroundColor }}>
+        style={{ flexDirection: 'row', backgroundColor: item.backgroundColor }}
+       >
         <Text style={styles.text}>{item.text}</Text>
-        <TouchableOpacity
-          onPress={() => {
-            const ref = this.refMap.get(item.key);
-            if (ref) {
-              if (this.openMap.get(item.key)) ref.close();
-              else ref.open();
-            }
-          }}>
-          <Text style={styles.text}>{`<>`}</Text>
-        </TouchableOpacity>
       </View>
-    </SwipeRow>
+    </SwipeItem>
   );
 
   render() {
