@@ -3,6 +3,8 @@
 A swipeable component with underlay for React Native.<br />
 Fully native interactions powered by [Reanimated](https://github.com/kmagiera/react-native-reanimated) and [React Native Gesture Handler](https://github.com/kmagiera/react-native-gesture-handler)
 
+Compatible with [React Native Draggable Flatlist](https://github.com/computerjazz/react-native-draggable-flatlist)
+
 ![Swipeable Item demo](https://imgur.com/W2qACyE.gif)
 
 ## Install
