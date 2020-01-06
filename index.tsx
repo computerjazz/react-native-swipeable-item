@@ -15,6 +15,8 @@ const {
   set,
   eq,
   not,
+  abs,
+  sub,
   clockRunning,
   add,
   and,
@@ -29,24 +31,25 @@ const {
   Clock,
   onChange,
   multiply,
+  divide,
 } = Animated;
 
 type Props = {
   children: React.ReactNode;
-  swipeThreshold: number;
   underlayWidth: number;
   renderUnderlay: () => React.ReactNode;
-  onOpen: () => void;
-  onClose: () => void;
+  onChange: (isOpen: boolean) => void;
+  direction?: 'left' | 'right';
 };
 
 class SwipeRow extends React.Component<Props> {
   static defaultProps = {
-    onOpen: () => { },
-    onClose: () => { },
-    swipeThreshold: 100,
+    onChange: () => { },
     underlayWidth: 200,
+    direction: 'left',
   };
+
+  isLeft = new Value(this.props.direction === 'left' ? 1 : 0);
 
   clock = new Clock();
   prevTranslate = new Value(0);
@@ -71,24 +74,20 @@ class SwipeRow extends React.Component<Props> {
     restDisplacementThreshold: 0.2,
   };
 
-  exceedsThreshold = cond(
-    greaterThan(this.props.swipeThreshold, 0),
-    greaterThan(this.animState.position, this.props.swipeThreshold),
-    lessThan(this.animState.position, this.props.swipeThreshold)
-  );
+  absPosition = abs(this.animState.position)
+  exceedsThreshold = greaterThan(this.absPosition, divide(this.props.underlayWidth, 2))
 
-  isOpen = cond(
-    greaterThan(this.props.swipeThreshold, 0),
-    greaterOrEq(this.animState.position, this.props.underlayWidth),
-    lessOrEq(this.animState.position, this.props.underlayWidth)
-  );
+  isOpen = greaterOrEq(this.absPosition, this.props.underlayWidth)
 
-  isClosed = eq(this.animState.position, 0);
+  isClosed = lessOrEq(
+    sub(this.absPosition, this.props.underlayWidth),
+    0
+  );
 
   underlayPosition = cond(
-    greaterThan(this.props.swipeThreshold, 0),
-    this.props.underlayWidth,
-    multiply(this.props.underlayWidth, -1)
+    this.isLeft,
+    multiply(this.props.underlayWidth, -1),
+    this.props.underlayWidth
   );
 
   openFlag = new Value<number>(0);
@@ -98,11 +97,11 @@ class SwipeRow extends React.Component<Props> {
   close = () => this.closeFlag.setValue(1);
 
   onOpen = () => {
-    this.props.onOpen();
+    this.props.onChange(true);
   };
 
   onClose = () => {
-    this.props.onClose();
+    this.props.onChange(false);
   };
 
   // Called whenever gesture state changes. (User begins/ends pan,
@@ -131,11 +130,19 @@ class SwipeRow extends React.Component<Props> {
     },
   ]);
 
+  maxTranslate = cond(this.isLeft, 0, this.underlayPosition)
+  minTranslate = cond(this.isLeft, this.underlayPosition, 0)
+
   onPanEvent = event([
     {
       nativeEvent: ({ translationX }: PanGestureHandlerEventExtra) =>
         block([
-          cond(eq(this.gestureState, GestureState.ACTIVE), [
+          cond(
+            and(
+              eq(this.gestureState, GestureState.ACTIVE),
+              lessOrEq(add(translationX, this.prevTranslate), this.maxTranslate),
+              greaterOrEq(add(translationX, this.prevTranslate), this.minTranslate),
+            ), [
             // Update our translate animated value as the user pans
             set(this.animState.position, add(translationX, this.prevTranslate)),
             // If swipe distance exceeds threshold, delete item
