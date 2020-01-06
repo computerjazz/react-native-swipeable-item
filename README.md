@@ -13,6 +13,9 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 3. `import SwipeItem from 'react-native-swipeable-item'`  
 
 ### Props
+
+_NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left_. So what do you name these things? I have decided to name everything according to swipe direction. Therefore, a swipe left reveals the `renderUnderlayLeft()` component with width `underlayWidthLeft`. Not perfect but it works.
+
 Name | Type | Description
 :--- | :--- | :---
 `renderUnderlayLeft` | `() => React.ReactNode` |  Component to be rendered underneath row on left swipe.
@@ -24,7 +27,7 @@ Name | Type | Description
 ### Instance Methods
 Name | Type | Description
 :--- | :--- | :---
-`open` | `("left" | "right") => void` |  Programmatically open left or right.
+`open` | `("left" \| "right") => void` |  Programmatically open left or right.
 `close` | `() => void` | Close all.
 
 ```js
@@ -36,7 +39,7 @@ const itemRef: SwipeItem | null = null
 <SwipeItem ref={ref => itemRef = ref} />
 
 ...
-if (itemRef) itemRef.open()
+if (itemRef) itemRef.open("left")
 ```
 
 ### Example
