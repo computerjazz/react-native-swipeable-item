@@ -24,7 +24,6 @@ Name | Type | Description
 ### Example
 ```javascript
 import * as React from 'react';
-const { useCallback, useState } = React;
 import {
   Text,
   View,
@@ -53,7 +52,6 @@ class App extends React.Component {
     data: initialData,
   };
 
-
   deleteItem = item => {
     const updatedData = this.state.data.filter(d => d !== item);
     // Animate list to close gap when item is deleted
@@ -66,17 +64,19 @@ class App extends React.Component {
       key={item.key}
       direction="left"
       underlayWidth={200}
-      renderUnderlay={() => {
-        return (
+      renderUnderlay={() => (
           <View style={styles.underlay}>
             <TouchableOpacity onPress={() => this.deleteItem(item)}>
               <Text style={styles.text}>{`[x]`}</Text>
             </TouchableOpacity>
           </View>
-        );
-      }}>
+        )
+      }>
       <View
-        style={{ flexDirection: 'row', backgroundColor: item.backgroundColor }}
+        style={{ 
+          flexDirection: 'row', 
+          backgroundColor: item.backgroundColor 
+        }}
        >
         <Text style={styles.text}>{item.text}</Text>
       </View>
@@ -86,7 +86,10 @@ class App extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <FlatList data={this.state.data} renderItem={this.renderItem} />
+        <FlatList 
+          data={this.state.data} 
+          renderItem={this.renderItem} 
+        />
       </View>
     );
   }
