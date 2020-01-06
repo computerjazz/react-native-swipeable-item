@@ -10,7 +10,7 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 ## Install
 1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
 2. `npm install` or `yarn add` `react-native-swipeable-item` 
-3. `import SwipeItem from 'react-native-swipeable-Item'`  
+3. `import SwipeItem from 'react-native-swipeable-item'`  
 
 ### Props
 Name | Type | Description
