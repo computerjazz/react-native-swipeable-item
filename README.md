@@ -15,15 +15,33 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 ### Props
 Name | Type | Description
 :--- | :--- | :---
-`direction` | `"left" \| "right"` | Direction that the item slides.
-`renderUnderlay` | `() => React.ReactNode` |  Component to be rendered underneath row.
-`underlayWidth` | `number` | Width of underlay.
-`onChange` | `(isOpen: boolean) => void` |  Called when row is opened or closed.
+`renderUnderlayLeft` | `() => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`underlayWidthLeft` | `number` | Width of left-swiped underlay.
+`renderUnderlayRight` | `() => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`underlayWidthRight` | `number` | Width of left-swiped underlay.
+`onChange` | `(params: { open: "left" \| "right" \| "null" }) => void` |  Called when row is opened or closed.
 
+### Instance Methods
+Name | Type | Description
+:--- | :--- | :---
+`open` | `("left" | "right") => void` |  Programmatically open left or right.
+`close` | `() => void` | Close all.
+
+```js
+// Programmatic open example
+const itemRef: SwipeItem | null = null
+
+...
+
+<SwipeItem ref={ref => itemRef = ref} />
+
+...
+if (itemRef) itemRef.open()
+```
 
 ### Example
 ```javascript
-import * as React from 'react';
+import React from 'react';
 import {
   Text,
   View,
@@ -32,7 +50,8 @@ import {
   LayoutAnimation,
   TouchableOpacity,
 } from 'react-native';
-import SwipeItem from 'react-native-swipeable-item';
+import SwipeRow from './components/SwipeRow';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 
 const NUM_ITEMS = 10;
 function getColor(i) {
@@ -59,36 +78,53 @@ class App extends React.Component {
     this.setState({ data: updatedData });
   };
 
-  renderItem = ({ item, index }) => (
-    <SwipeItem
+  itemRefs = new Map();
+
+  renderItem = ({ item, index, drag }) => (
+    <SwipeRow
       key={item.key}
-      direction="left"
-      underlayWidth={200}
-      renderUnderlay={() => (
-          <View style={styles.underlay}>
-            <TouchableOpacity onPress={() => this.deleteItem(item)}>
-              <Text style={styles.text}>{`[x]`}</Text>
-            </TouchableOpacity>
-          </View>
-        )
-      }>
-      <View
-        style={{ 
-          flexDirection: 'row', 
-          backgroundColor: item.backgroundColor 
-        }}
-       >
-        <Text style={styles.text}>{item.text}</Text>
-      </View>
-    </SwipeItem>
+      ref={ref => this.itemRefs.set(item.key, ref)}
+      underlayWidthLeft={100}
+      underlayWidthRight={200}
+      underlayLeft={() => (
+        <TouchableOpacity
+          onPressOut={() => this.deleteItem(item)}
+          style={{
+            flex: 1,
+            backgroundColor: 'tomato',
+            alignItems: 'flex-end',
+          }}>
+          <Text style={styles.text}>{`[x]`}</Text>
+        </TouchableOpacity>
+      )}
+      underlayRight={() => (
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: 'teal',
+            alignItems: 'flex-start',
+          }}
+          onPressOut={() => {
+            const ref = this.itemRefs.get(item.key);
+            if (ref) ref.close();
+          }}>
+          <Text style={styles.text}>CLOSE</Text>
+        </TouchableOpacity>
+      )}>
+      <Text style={[styles.text, { backgroundColor: item.backgroundColor }]}>
+        {item.text}
+      </Text>
+    </SwipeRow>
   );
 
   render() {
     return (
       <View style={styles.container}>
-        <FlatList 
-          data={this.state.data} 
-          renderItem={this.renderItem} 
+        <DraggableFlatList
+          keyExtractor={item => item.key}
+          data={this.state.data}
+          renderItem={this.renderItem}
+          onDragEnd={({ data }) => this.setState({ data })}
         />
       </View>
     );
@@ -107,12 +143,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     flex: 1,
     textAlign: 'center',
-    padding: 25,
+    padding: 15,
   },
-  underlay: { 
-    flex: 1, 
-    backgroundColor: 'tomato', 
-    alignItems: 'flex-end' 
-  }
 });
 ```
