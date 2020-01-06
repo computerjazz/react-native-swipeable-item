@@ -15,11 +15,10 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 ### Props
 Name | Type | Description
 :--- | :--- | :---
+`direction` | `"left" | "right"` | Direction that the item slides.
 `renderUnderlay` | `() => React.ReactNode` |  Component to be rendered underneath row.
 `underlayWidth` | `number` | Width of underlay.
-`swipeThreshold` | `number` | Swipe threshold for underlay to remain open on release.
-`onOpen` | `() => void` |  Called when row is opened.
-`onClose` | `() => void` | Called when row is closed.
+`onChange` | `(isOpen: boolean) => void` |  Called when row is opened or closed.
 
 
 ### Example
