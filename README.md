@@ -5,7 +5,7 @@ Fully native interactions powered by [Reanimated](https://github.com/kmagiera/re
 
 Compatible with [React Native Draggable Flatlist](https://github.com/computerjazz/react-native-draggable-flatlist)
 
-![Swipeable Item demo](https://i.imgur.com/zc2IrRl.gif)
+![Swipeable Item demo](https://i.imgur.com/AjjflR4.gif)
 
 ## Install
 1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
@@ -54,7 +54,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import SwipeRow from './components/SwipeRow';
+import SwipeRow from 'react-native-swipeable-item';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 const { multiply, sub } = Animated;
 
