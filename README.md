@@ -53,8 +53,10 @@ import {
   LayoutAnimation,
   TouchableOpacity,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import SwipeRow from './components/SwipeRow';
 import DraggableFlatList from 'react-native-draggable-flatlist';
+const { multiply, sub } = Animated;
 
 const NUM_ITEMS = 10;
 function getColor(i) {
@@ -76,30 +78,36 @@ class App extends React.Component {
 
   itemRefs = new Map();
 
-  deleteItem = item => {
+  deleteItem = ({ item }) => {
     const updatedData = this.state.data.filter(d => d !== item);
     // Animate list to close gap when item is deleted
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     this.setState({ data: updatedData });
   };
 
-  renderUnderlayLeft = item => (
-    <TouchableOpacity
-      onPressOut={() => this.deleteItem(item)}
-      style={[styles.row, styles.underlayLeft]}>
-      <Text style={styles.text}>{`[x]`}</Text>
-    </TouchableOpacity>
+  renderUnderlayLeft = ({ item, percentOpen }) => (
+    <Animated.View
+      style={[styles.row, styles.underlayLeft, { opacity: percentOpen }]} // Fade in on open
+    >
+      <TouchableOpacity onPressOut={() => this.deleteItem(item)}>
+        <Text style={styles.text}>{`[x]`}</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 
-  renderUnderlayRight = item => (
-    <TouchableOpacity
-      style={[styles.row, styles.underlayRight]}
-      onPressOut={() => {
-        const ref = this.itemRefs.get(item.key);
-        if (ref) ref.close();
-      }}>
-      <Text style={styles.text}>CLOSE</Text>
-    </TouchableOpacity>
+  renderUnderlayRight = ({ item, percentOpen }) => (
+    <Animated.View
+      style={[styles.row, styles.underlayRight, {
+        transform: [{ translateX: multiply(sub(1, percentOpen), -100) }], // Translate from left on open
+      }]}>
+      <TouchableOpacity
+        onPressOut={() => {
+          const ref = this.itemRefs.get(item.key);
+          if (ref) ref.close();
+        }}>
+        <Text style={styles.text}>CLOSE</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   renderItem = ({ item, index, drag }) => {
@@ -112,6 +120,15 @@ class App extends React.Component {
             this.itemRefs.set(item.key, ref);
           }
         }}
+        onChange={({ open }) => {
+          if (open) {
+            // Close all other open items
+            [...this.itemRefs.entries()].forEach(([key, ref]) => {
+              if (key !== item.key && ref) ref.close();
+            });
+          }
+        }}
+        overSwipe={1000}
         renderUnderlayLeft={this.renderUnderlayLeft}
         underlayWidthLeft={100}
         renderUnderlayRight={this.renderUnderlayRight}
@@ -168,5 +185,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 });
+
 
 ```

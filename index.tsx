@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import {
   PanGestureHandler,
   State as GestureState,
@@ -39,9 +39,9 @@ type Props<T> = {
   item: T;
   children: React.ReactNode;
   underlayWidthLeft: number;
-  renderUnderlayLeft?: (item: T) => React.ReactNode;
+  renderUnderlayLeft?: (params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode;
   underlayWidthRight: number;
-  renderUnderlayRight?: (item: T) => React.ReactNode;
+  renderUnderlayRight?: (params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode;
   onChange: (params: { open: boolean | 'left' | 'right' }) => void;
   direction?: 'left' | 'right';
   overSwipe: number;
@@ -86,6 +86,8 @@ class SwipeRow<T> extends React.Component<Props<T>> {
 
   swipingLeft = lessThan(this.animState.position, 0);
   swipingRight = greaterThan(this.animState.position, 0);
+  percentOpenLeft = cond(this.swipingLeft, divide(abs(this.animState.position), this.props.underlayWidthLeft))
+  percentOpenRight = cond(this.swipingRight, divide(abs(this.animState.position), this.props.underlayWidthRight))
   isSwiping = or(this.swipingLeft, this.swipingRight);
 
   leftActive = or(
@@ -277,14 +279,14 @@ class SwipeRow<T> extends React.Component<Props<T>> {
         <Animated.View
           pointerEvents={this.state.swipeDirection === 'left' ? 'auto' : 'none'}
           style={[styles.underlay, { opacity: this.leftActive }]}>
-          {renderUnderlayLeft(item)}
+          {renderUnderlayLeft({ item, percentOpen: this.percentOpenLeft })}
         </Animated.View>
         <Animated.View
           pointerEvents={
             this.state.swipeDirection === 'right' ? 'auto' : 'none'
           }
           style={[styles.underlay, { opacity: not(this.leftActive) }]}>
-          {renderUnderlayRight(item)}
+          {renderUnderlayRight({ item, percentOpen: this.percentOpenRight })}
         </Animated.View>
         <PanGestureHandler
           minDeltaX={10}
