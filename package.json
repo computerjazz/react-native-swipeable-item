@@ -1,6 +1,6 @@
 {
   "name": "react-native-swipeable-item",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Swipeable flatlist row",
   "main": "index.tsx",
   "scripts": {
