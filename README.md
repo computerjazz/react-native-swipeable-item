@@ -5,7 +5,7 @@ Fully native interactions powered by [Reanimated](https://github.com/kmagiera/re
 
 Compatible with [React Native Draggable Flatlist](https://github.com/computerjazz/react-native-draggable-flatlist)
 
-![Swipeable Item demo](https://i.imgur.com/AjjflR4.gif)
+![Swipeable Item demo](https://i.imgur.com/fFCnQ0n.gif)
 
 ## Install
 1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
