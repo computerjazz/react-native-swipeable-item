@@ -35,13 +35,20 @@ const {
   divide,
 } = Animated;
 
+type RenderUnderlay<T> = (params: { 
+  item: T, 
+  percentOpen: Animated.Node<number> 
+  open: () => void
+  close: () => void
+}) => React.ReactNode
+
 type Props<T> = {
   item: T;
   children: React.ReactNode;
   underlayWidthLeft: number;
-  renderUnderlayLeft?: (params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode;
+  renderUnderlayLeft?: RenderUnderlay<T>;
   underlayWidthRight: number;
-  renderUnderlayRight?: (params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode;
+  renderUnderlayRight?: RenderUnderlay<T>;
   onChange: (params: { open: boolean | 'left' | 'right' }) => void;
   direction?: 'left' | 'right';
   overSwipe: number;
@@ -84,6 +91,8 @@ class SwipeRow<T> extends React.Component<Props<T>> {
 
   panX = new Value(0);
 
+  hasLeft = greaterThan(this.props.underlayWidthLeft, 0)
+  hasRight = greaterThan(this.props.underlayWidthRight, 0)
   swipingLeft = lessThan(this.animState.position, 0);
   swipingRight = greaterThan(this.animState.position, 0);
   percentOpenLeft = cond(this.swipingLeft, divide(abs(this.animState.position), this.props.underlayWidthLeft))
@@ -183,11 +192,11 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   maxTranslate = cond(
     this.leftActive,
     0,
-    add(this.underlayPosition, this.props.overSwipe)
+    cond(this.hasRight, add(this.underlayPosition, this.props.overSwipe), 0)
   );
   minTranslate = cond(
     this.leftActive,
-    sub(this.underlayPosition, this.props.overSwipe),
+    cond(this.hasLeft, sub(this.underlayPosition, this.props.overSwipe), 0),
     0
   );
 
@@ -279,15 +288,25 @@ class SwipeRow<T> extends React.Component<Props<T>> {
         <Animated.View
           pointerEvents={this.state.swipeDirection === 'left' ? 'auto' : 'none'}
           style={[styles.underlay, { opacity: this.leftActive }]}>
-          {renderUnderlayLeft({ item, percentOpen: this.percentOpenLeft })}
+          {renderUnderlayLeft({
+            item,
+            percentOpen: this.percentOpenLeft,
+            open: () => this.open("left"),
+            close: this.close
+          })}
         </Animated.View>
         <Animated.View
           pointerEvents={
             this.state.swipeDirection === 'right' ? 'auto' : 'none'
           }
           style={[styles.underlay, { opacity: not(this.leftActive) }]}>
-          {renderUnderlayRight({ item, percentOpen: this.percentOpenRight })}
-        </Animated.View>
+          {renderUnderlayRight({
+            item,
+            percentOpen: this.percentOpenRight,
+            open: () => this.open("right"),
+            close: this.close
+          })}
+          </Animated.View>
         <PanGestureHandler
           minDeltaX={10}
           onGestureEvent={this.onPanEvent}

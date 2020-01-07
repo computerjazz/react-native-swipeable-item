@@ -18,8 +18,8 @@ _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left
 
 Name | Type | Description
 :--- | :--- | :---
-`renderUnderlayLeft` | `(params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
-`renderUnderlayRight` | `(params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayLeft` | `(params: { item: T, percentOpen: Animated.Node<number>, open: () => void, close: () => void }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayRight` | `(params: { item: T, percentOpen: Animated.Node<number>, open: () => void, close: () => void }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
 `underlayWidthLeft` | `number` | Width of left-swiped underlay.
 `underlayWidthRight` | `number` | Width of left-swiped underlay.
 `onChange` | `(params: { open: "left" \| "right" \| "null" }) => void` |  Called when row is opened or closed.
@@ -95,16 +95,13 @@ class App extends React.Component {
     </Animated.View>
   );
 
-  renderUnderlayRight = ({ item, percentOpen }) => (
+  renderUnderlayRight = ({ item, percentOpen, close }) => (
     <Animated.View
       style={[styles.row, styles.underlayRight, {
         transform: [{ translateX: multiply(sub(1, percentOpen), -100) }], // Translate from left on open
       }]}>
       <TouchableOpacity
-        onPressOut={() => {
-          const ref = this.itemRefs.get(item.key);
-          if (ref) ref.close();
-        }}>
+        onPressOut={close}>
         <Text style={styles.text}>CLOSE</Text>
       </TouchableOpacity>
     </Animated.View>
