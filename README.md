@@ -53,7 +53,7 @@ import {
   LayoutAnimation,
   TouchableOpacity,
 } from 'react-native';
-import SwipeRow from 'react-native-swipeable-item';
+import SwipeRow from './components/SwipeRow';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 
 const NUM_ITEMS = 10;
@@ -74,6 +74,8 @@ class App extends React.Component {
     data: initialData,
   };
 
+  itemRefs = new Map();
+
   deleteItem = item => {
     const updatedData = this.state.data.filter(d => d !== item);
     // Animate list to close gap when item is deleted
@@ -81,27 +83,17 @@ class App extends React.Component {
     this.setState({ data: updatedData });
   };
 
-  itemRefs = new Map();
-
   renderUnderlayLeft = item => (
     <TouchableOpacity
       onPressOut={() => this.deleteItem(item)}
-      style={[styles.row, {
-        flex: 1,
-        backgroundColor: 'tomato',
-        justifyContent: 'flex-end',
-      }]}>
+      style={[styles.row, styles.underlayLeft]}>
       <Text style={styles.text}>{`[x]`}</Text>
     </TouchableOpacity>
   );
 
   renderUnderlayRight = item => (
     <TouchableOpacity
-      style={[styles.row, {
-        flex: 1,
-        backgroundColor: 'teal',
-        justifyContent: 'flex-start',
-      }]}
+      style={[styles.row, styles.underlayRight]}
       onPressOut={() => {
         const ref = this.itemRefs.get(item.key);
         if (ref) ref.close();
@@ -110,27 +102,28 @@ class App extends React.Component {
     </TouchableOpacity>
   );
 
-  renderItem = ({ item, index, drag }) => (
-    <SwipeRow
-      key={item.key}
-      item={item}
-      ref={ref => {
-        if (ref) this.itemRefs.set(item.key, ref);
-      }}
-      renderUnderlayLeft={this.renderUnderlayLeft}
-      renderUnderlayRight={this.renderUnderlayRight}
-      underlayWidthLeft={100}
-      underlayWidthRight={200}>
-      <View style={[styles.row,  { backgroundColor: item.backgroundColor }]}>
-        <TouchableOpacity onLongPress={drag}>
-          <Text
-            style={styles.text}>
-            {item.text}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SwipeRow>
-  );
+  renderItem = ({ item, index, drag }) => {
+    return (
+      <SwipeRow
+        key={item.key}
+        item={item}
+        ref={ref => {
+          if (ref && !this.itemRefs.get(item.key)) {
+            this.itemRefs.set(item.key, ref);
+          }
+        }}
+        renderUnderlayLeft={this.renderUnderlayLeft}
+        underlayWidthLeft={100}
+        renderUnderlayRight={this.renderUnderlayRight}
+        underlayWidthRight={200}>
+        <View style={[styles.row, { backgroundColor: item.backgroundColor }]}>
+          <TouchableOpacity onLongPress={drag}>
+            <Text style={styles.text}>{item.text}</Text>
+          </TouchableOpacity>
+        </View>
+      </SwipeRow>
+    );
+  };
 
   render() {
     return (
@@ -164,5 +157,16 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 32,
   },
+  underlayRight: {
+    flex: 1,
+    backgroundColor: 'teal',
+    justifyContent: 'flex-start',
+  },
+  underlayLeft: {
+    flex: 1,
+    backgroundColor: 'tomato',
+    justifyContent: 'flex-end',
+  },
 });
+
 ```
