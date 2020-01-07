@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import {
   PanGestureHandler,
   State as GestureState,
@@ -35,18 +35,18 @@ const {
   divide,
 } = Animated;
 
-type Props = {
+type Props<T> = {
+  item: T,
   children: React.ReactNode;
   underlayWidthLeft: number;
-  underlayLeft?: () => React.ReactNode;
+  renderUnderlayLeft?: (item: T) => React.ReactNode;
   underlayWidthRight: number;
-  underlayRight?: () => React.ReactNode;
+  renderUnderlayRight?: (item: T) => React.ReactNode;
   onChange: (params: { open: boolean | 'left' | 'right' }) => void;
-  direction?: 'left' | 'right';
   overSwipe: number
 };
 
-class SwipeRow extends React.Component<Props> {
+class SwipeRow<T> extends React.Component<Props<T>> {
   static defaultProps = {
     onChange: () => { },
     underlayWidthLeft: 0,
@@ -226,9 +226,10 @@ class SwipeRow extends React.Component<Props> {
 
   render() {
     const {
+      item,
       children,
-      underlayLeft = () => null,
-      underlayRight = () => null,
+      renderUnderlayLeft = () => null,
+      renderUnderlayRight = () => null,
     } = this.props;
     return (
       <PanGestureHandler
@@ -240,11 +241,11 @@ class SwipeRow extends React.Component<Props> {
           <Animated.View
             pointerEvents={this.state.swipeDirection === "left" ? "auto" : "none"}
             style={[styles.underlay, { opacity: this.swipingLeft }]}
-          >{underlayLeft()}</Animated.View>
+          >{renderUnderlayLeft(item)}</Animated.View>
           <Animated.View
             pointerEvents={this.state.swipeDirection === "right" ? "auto" : "none"}
             style={[styles.underlay, { opacity: this.swipingRight }]}
-          >{underlayRight()}</Animated.View>
+          >{renderUnderlayRight(item)}</Animated.View>
           <Animated.View
             style={{
               flex: 1,

@@ -10,7 +10,7 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 ## Install
 1. Follow installation instructions for [reanimated](https://github.com/kmagiera/react-native-reanimated) and [react-native-gesture-handler](https://github.com/kmagiera/react-native-gesture-handler)
 2. `npm install` or `yarn add` `react-native-swipeable-item` 
-3. `import SwipeItem from 'react-native-swipeable-item'`  
+3. `import SwipeRow from 'react-native-swipeable-item'`  
 
 ### Props
 
@@ -32,11 +32,11 @@ Name | Type | Description
 
 ```js
 // Programmatic open example
-const itemRef: SwipeItem | null = null
+const itemRef: SwipeRow | null = null
 
 ...
 
-<SwipeItem ref={ref => itemRef = ref} />
+<SwipeRow ref={ref => itemRef = ref} />
 
 ...
 if (itemRef) itemRef.open("left")
@@ -53,7 +53,7 @@ import {
   LayoutAnimation,
   TouchableOpacity,
 } from 'react-native';
-import SwipeRow from './components/SwipeRow';
+import SwipeRow from 'react-native-swipeable-item';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 
 const NUM_ITEMS = 10;
@@ -83,40 +83,52 @@ class App extends React.Component {
 
   itemRefs = new Map();
 
+  renderUnderlayLeft = item => (
+    <TouchableOpacity
+      onPressOut={() => this.deleteItem(item)}
+      style={[styles.row, {
+        flex: 1,
+        backgroundColor: 'tomato',
+        justifyContent: 'flex-end',
+      }]}>
+      <Text style={styles.text}>{`[x]`}</Text>
+    </TouchableOpacity>
+  );
+
+  renderUnderlayRight = item => (
+    <TouchableOpacity
+      style={[styles.row, {
+        flex: 1,
+        backgroundColor: 'teal',
+        justifyContent: 'flex-start',
+      }]}
+      onPressOut={() => {
+        const ref = this.itemRefs.get(item.key);
+        if (ref) ref.close();
+      }}>
+      <Text style={styles.text}>CLOSE</Text>
+    </TouchableOpacity>
+  );
+
   renderItem = ({ item, index, drag }) => (
     <SwipeRow
       key={item.key}
-      ref={ref => this.itemRefs.set(item.key, ref)}
+      item={item}
+      ref={ref => {
+        if (ref) this.itemRefs.set(item.key, ref);
+      }}
+      renderUnderlayLeft={this.renderUnderlayLeft}
       underlayWidthLeft={100}
-      underlayWidthRight={200}
-      underlayLeft={() => (
-        <TouchableOpacity
-          onPressOut={() => this.deleteItem(item)}
-          style={{
-            flex: 1,
-            backgroundColor: 'tomato',
-            alignItems: 'flex-end',
-          }}>
-          <Text style={styles.text}>{`[x]`}</Text>
+      renderUnderlayRight={this.renderUnderlayRight}
+      underlayWidthRight={200}>
+      <View style={[styles.row,  { backgroundColor: item.backgroundColor }]}>
+        <TouchableOpacity onLongPress={drag}>
+          <Text
+            style={styles.text}>
+            {item.text}
+          </Text>
         </TouchableOpacity>
-      )}
-      underlayRight={() => (
-        <TouchableOpacity
-          style={{
-            flex: 1,
-            backgroundColor: 'teal',
-            alignItems: 'flex-start',
-          }}
-          onPressOut={() => {
-            const ref = this.itemRefs.get(item.key);
-            if (ref) ref.close();
-          }}>
-          <Text style={styles.text}>CLOSE</Text>
-        </TouchableOpacity>
-      )}>
-      <Text style={[styles.text, { backgroundColor: item.backgroundColor }]}>
-        {item.text}
-      </Text>
+      </View>
     </SwipeRow>
   );
 
@@ -140,13 +152,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  row: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+  },
   text: {
     fontWeight: 'bold',
     color: 'white',
     fontSize: 32,
-    flex: 1,
-    textAlign: 'center',
-    padding: 15,
   },
 });
 ```
