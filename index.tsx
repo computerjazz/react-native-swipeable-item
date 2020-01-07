@@ -240,11 +240,11 @@ class SwipeRow<T> extends React.Component<Props<T>> {
           <Animated.Code>{this.runCode}</Animated.Code>
           <Animated.View
             pointerEvents={this.state.swipeDirection === "left" ? "auto" : "none"}
-            style={[styles.underlay, { opacity: this.swipingLeft }]}
+            style={[styles.underlay, { opacity: this.leftActive }]}
           >{renderUnderlayLeft(item)}</Animated.View>
           <Animated.View
             pointerEvents={this.state.swipeDirection === "right" ? "auto" : "none"}
-            style={[styles.underlay, { opacity: this.swipingRight }]}
+            style={[styles.underlay, { opacity: not(this.leftActive) }]}
           >{renderUnderlayRight(item)}</Animated.View>
           <Animated.View
             style={{
