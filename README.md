@@ -18,8 +18,8 @@ _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left
 
 Name | Type | Description
 :--- | :--- | :---
-`renderUnderlayLeft` | `(item: T) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
-`renderUnderlayRight` | `(item: T) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayLeft` | `(params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayRight` | `(params: { item: T, percentOpen: Animated.Node<number> }) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
 `underlayWidthLeft` | `number` | Width of left-swiped underlay.
 `underlayWidthRight` | `number` | Width of left-swiped underlay.
 `onChange` | `(params: { open: "left" \| "right" \| "null" }) => void` |  Called when row is opened or closed.
