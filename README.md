@@ -18,9 +18,9 @@ _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left
 
 Name | Type | Description
 :--- | :--- | :---
-`renderUnderlayLeft` | `() => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayLeft` | `(item: T) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
+`renderUnderlayRight` | `(item: T) => React.ReactNode` |  Component to be rendered underneath row on left swipe.
 `underlayWidthLeft` | `number` | Width of left-swiped underlay.
-`renderUnderlayRight` | `() => React.ReactNode` |  Component to be rendered underneath row on left swipe.
 `underlayWidthRight` | `number` | Width of left-swiped underlay.
 `onChange` | `(params: { open: "left" \| "right" \| "null" }) => void` |  Called when row is opened or closed.
 
@@ -118,8 +118,8 @@ class App extends React.Component {
         if (ref) this.itemRefs.set(item.key, ref);
       }}
       renderUnderlayLeft={this.renderUnderlayLeft}
-      underlayWidthLeft={100}
       renderUnderlayRight={this.renderUnderlayRight}
+      underlayWidthLeft={100}
       underlayWidthRight={200}>
       <View style={[styles.row,  { backgroundColor: item.backgroundColor }]}>
         <TouchableOpacity onLongPress={drag}>
