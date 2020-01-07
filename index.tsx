@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import {
   PanGestureHandler,
   State as GestureState,
@@ -36,14 +36,15 @@ const {
 } = Animated;
 
 type Props<T> = {
-  item: T,
+  item: T;
   children: React.ReactNode;
   underlayWidthLeft: number;
   renderUnderlayLeft?: (item: T) => React.ReactNode;
   underlayWidthRight: number;
   renderUnderlayRight?: (item: T) => React.ReactNode;
   onChange: (params: { open: boolean | 'left' | 'right' }) => void;
-  overSwipe: number
+  direction?: 'left' | 'right';
+  overSwipe: number;
 };
 
 class SwipeRow<T> extends React.Component<Props<T>> {
@@ -55,8 +56,8 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   };
 
   state = {
-    swipeDirection: null as "left" | "right" | null,
-  }
+    swipeDirection: null as 'left' | 'right' | null,
+  };
 
   clock = new Clock();
   prevTranslate = new Value(0);
@@ -77,42 +78,55 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     mass: 0.2,
     stiffness: 100,
     overshootClamping: false,
-    restSpeedThreshold: 0.2,
-    restDisplacementThreshold: 0.2,
+    restSpeedThreshold: 0.5,
+    restDisplacementThreshold: 0.5,
   };
 
-  panX = new Value(0)
+  panX = new Value(0);
 
-  swipingLeft = lessThan(this.animState.position, 0)
-  swipingRight = greaterThan(this.animState.position, 0)
-  isSwiping = or(this.swipingLeft, this.swipingRight)
+  swipingLeft = lessThan(this.animState.position, 0);
+  swipingRight = greaterThan(this.animState.position, 0);
+  isSwiping = or(this.swipingLeft, this.swipingRight);
 
-  leftActive = or(this.swipingLeft, and(not(this.isSwiping), lessThan(this.panX, 0)))
-
+  leftActive = or(
+    this.swipingLeft,
+    and(not(this.isSwiping), lessThan(this.panX, 0))
+  );
 
   onSwipeLeftChange = ([isSwiping]: ReadonlyArray<number>) => {
-    if (isSwiping) this.setState({ swipeDirection: "left" })
-  }
+    if (isSwiping) this.setState({ swipeDirection: 'left' });
+  };
   onSwipeRightChange = ([isSwiping]: ReadonlyArray<number>) => {
-    if (isSwiping) this.setState({ swipeDirection: "right" })
-  }
+    if (isSwiping) this.setState({ swipeDirection: 'right' });
+  };
   onIsSwipingChange = ([isSwiping]: ReadonlyArray<number>) => {
-    if (!isSwiping) this.setState({ swipeDirection: null })
-  }
+    if (!isSwiping) this.setState({ swipeDirection: null });
+  };
 
-  absPosition = abs(this.animState.position)
+  absPosition = abs(this.animState.position);
 
-  exceedsThresholdLeft = greaterThan(this.absPosition, divide(this.props.underlayWidthLeft, 2))
-  exceedsThresholdRight = greaterThan(this.absPosition, divide(this.props.underlayWidthRight, 2))
-  exceedsThreshold = cond(this.swipingLeft, this.exceedsThresholdLeft, this.exceedsThresholdRight)
-
-  underlayWidth = cond(this.leftActive, this.props.underlayWidthLeft, this.props.underlayWidthRight)
-  isOpen = greaterOrEq(this.absPosition, this.underlayWidth)
-
-  isClosed = lessOrEq(
-    sub(this.absPosition, this.underlayWidth),
-    0
+  exceedsThresholdLeft = greaterThan(
+    this.absPosition,
+    divide(this.props.underlayWidthLeft, 2)
   );
+  exceedsThresholdRight = greaterThan(
+    this.absPosition,
+    divide(this.props.underlayWidthRight, 2)
+  );
+  exceedsThreshold = cond(
+    this.swipingLeft,
+    this.exceedsThresholdLeft,
+    this.exceedsThresholdRight
+  );
+
+  underlayWidth = cond(
+    this.leftActive,
+    this.props.underlayWidthLeft,
+    this.props.underlayWidthRight
+  );
+  isOpen = greaterOrEq(this.absPosition, this.underlayWidth);
+
+  isClosed = lessOrEq(sub(this.absPosition, this.underlayWidth), 0);
 
   underlayPosition = cond(
     this.leftActive,
@@ -122,10 +136,10 @@ class SwipeRow<T> extends React.Component<Props<T>> {
 
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
-  open = (direction: "left" | "right") => {
-    if (direction === "left") this.openLeftFlag.setValue(1);
-    else if (direction === "right") this.openRightFlag.setValue(1);
-  }
+  open = (direction: 'left' | 'right') => {
+    if (direction === 'left') this.openLeftFlag.setValue(1);
+    else if (direction === 'right') this.openRightFlag.setValue(1);
+  };
 
   closeFlag = new Value<number>(0);
   close = () => this.closeFlag.setValue(1);
@@ -164,9 +178,16 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     },
   ]);
 
-
-  maxTranslate = cond(this.leftActive, 0, add(this.underlayPosition, this.props.overSwipe))
-  minTranslate = cond(this.leftActive, sub(this.underlayPosition, this.props.overSwipe), 0)
+  maxTranslate = cond(
+    this.leftActive,
+    0,
+    add(this.underlayPosition, this.props.overSwipe)
+  );
+  minTranslate = cond(
+    this.leftActive,
+    sub(this.underlayPosition, this.props.overSwipe),
+    0
+  );
 
   onPanEvent = event([
     {
@@ -176,13 +197,24 @@ class SwipeRow<T> extends React.Component<Props<T>> {
           cond(
             and(
               eq(this.gestureState, GestureState.ACTIVE),
-              lessOrEq(add(translationX, this.prevTranslate), this.maxTranslate),
-              greaterOrEq(add(translationX, this.prevTranslate), this.minTranslate),
-            ), [
-            // Update our translate animated value as the user pans
-            set(this.animState.position, add(translationX, this.prevTranslate)),
-            // If swipe distance exceeds threshold, delete item
-          ]),
+              lessOrEq(
+                add(translationX, this.prevTranslate),
+                this.maxTranslate
+              ),
+              greaterOrEq(
+                add(translationX, this.prevTranslate),
+                this.minTranslate
+              )
+            ),
+            [
+              // Update our translate animated value as the user pans
+              set(
+                this.animState.position,
+                add(translationX, this.prevTranslate)
+              ),
+              // If swipe distance exceeds threshold, delete item
+            ]
+          ),
         ]),
     },
   ]);
@@ -190,7 +222,10 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   runCode = () =>
     block([
       cond(this.openLeftFlag, [
-        set(this.animConfig.toValue, multiply(-1, this.props.underlayWidthLeft)),
+        set(
+          this.animConfig.toValue,
+          multiply(-1, this.props.underlayWidthLeft)
+        ),
         startClock(this.clock),
         set(this.openLeftFlag, 0),
       ]),
@@ -204,8 +239,14 @@ class SwipeRow<T> extends React.Component<Props<T>> {
         startClock(this.clock),
         set(this.closeFlag, 0),
       ]),
-      onChange(this.swipingLeft, call([this.swipingLeft], this.onSwipeLeftChange)),
-      onChange(this.swipingRight, call([this.swipingRight], this.onSwipeRightChange)),
+      onChange(
+        this.swipingLeft,
+        call([this.swipingLeft], this.onSwipeLeftChange)
+      ),
+      onChange(
+        this.swipingRight,
+        call([this.swipingRight], this.onSwipeRightChange)
+      ),
       onChange(this.isSwiping, call([this.isSwiping], this.onIsSwipingChange)),
 
       // If the clock is running, increment position in next tick by calling spring()
@@ -232,29 +273,33 @@ class SwipeRow<T> extends React.Component<Props<T>> {
       renderUnderlayRight = () => null,
     } = this.props;
     return (
-      <PanGestureHandler
-        minDeltaX={10}
-        onGestureEvent={this.onPanEvent}
-        onHandlerStateChange={this.onHandlerStateChange}>
-        <Animated.View>
-          <Animated.Code>{this.runCode}</Animated.Code>
-          <Animated.View
-            pointerEvents={this.state.swipeDirection === "left" ? "auto" : "none"}
-            style={[styles.underlay, { opacity: this.leftActive }]}
-          >{renderUnderlayLeft(item)}</Animated.View>
-          <Animated.View
-            pointerEvents={this.state.swipeDirection === "right" ? "auto" : "none"}
-            style={[styles.underlay, { opacity: not(this.leftActive) }]}
-          >{renderUnderlayRight(item)}</Animated.View>
+      <>
+        <Animated.View
+          pointerEvents={this.state.swipeDirection === 'left' ? 'auto' : 'none'}
+          style={[styles.underlay, { opacity: this.leftActive }]}>
+          {renderUnderlayLeft(item)}
+        </Animated.View>
+        <Animated.View
+          pointerEvents={
+            this.state.swipeDirection === 'right' ? 'auto' : 'none'
+          }
+          style={[styles.underlay, { opacity: not(this.leftActive) }]}>
+          {renderUnderlayRight(item)}
+        </Animated.View>
+        <PanGestureHandler
+          minDeltaX={10}
+          onGestureEvent={this.onPanEvent}
+          onHandlerStateChange={this.onHandlerStateChange}>
           <Animated.View
             style={{
               flex: 1,
               transform: [{ translateX: this.animState.position }],
             }}>
+            <Animated.Code>{this.runCode}</Animated.Code>
             {children}
           </Animated.View>
-        </Animated.View>
-      </PanGestureHandler>
+        </PanGestureHandler>
+      </>
     );
   }
 }
