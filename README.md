@@ -78,7 +78,7 @@ class App extends React.Component {
 
   itemRefs = new Map();
 
-  deleteItem = ({ item }) => {
+  deleteItem = (item) => {
     const updatedData = this.state.data.filter(d => d !== item);
     // Animate list to close gap when item is deleted
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
