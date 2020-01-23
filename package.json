@@ -1,10 +1,19 @@
 {
   "name": "react-native-swipeable-item",
   "version": "1.0.7",
-  "description": "Swipeable flatlist row",
+  "description": "A horizontally swipeable flatlist row compatible with react-native-draggable-flatlist",
   "main": "index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/computerjazz/react-native-swipeable-item.git"
   },
   "keywords": [
     "flatlist",
@@ -17,5 +26,18 @@
     "swipe"
   ],
   "author": "Daniel Merrill",
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/computerjazz/react-native-swipeable-item/issues"
+  },
+  "homepage": "https://github.com/computerjazz/react-native-swipeable-item#readme",
+  "peerDependencies": {
+    "react-native-gesture-handler": "^1.0.0",
+    "react-native-reanimated": "^1.0.0"
+  },
+  "devDependencies": {
+    "husky": "^4.2.0",
+    "prettier": "1.19.1",
+    "pretty-quick": "^2.0.1"
+  }
 }

@@ -1,12 +1,12 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import React from "react";
+import { StyleSheet } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState,
   PanGestureHandlerEventExtra,
-  GestureHandlerStateChangeNativeEvent,
-} from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
+  GestureHandlerStateChangeNativeEvent
+} from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 const {
   event,
   cond,
@@ -32,15 +32,15 @@ const {
   Clock,
   onChange,
   multiply,
-  divide,
+  divide
 } = Animated;
 
-type RenderUnderlay<T> = (params: { 
-  item: T, 
-  percentOpen: Animated.Node<number> 
-  open: () => void
-  close: () => void
-}) => React.ReactNode
+type RenderUnderlay<T> = (params: {
+  item: T;
+  percentOpen: Animated.Node<number>;
+  open: () => void;
+  close: () => void;
+}) => React.ReactNode;
 
 type Props<T> = {
   item: T;
@@ -49,21 +49,21 @@ type Props<T> = {
   renderUnderlayLeft?: RenderUnderlay<T>;
   underlayWidthRight: number;
   renderUnderlayRight?: RenderUnderlay<T>;
-  onChange: (params: { open: boolean | 'left' | 'right' }) => void;
-  direction?: 'left' | 'right';
+  onChange: (params: { open: boolean | "left" | "right" }) => void;
+  direction?: "left" | "right";
   overSwipe: number;
 };
 
 class SwipeRow<T> extends React.Component<Props<T>> {
   static defaultProps = {
-    onChange: () => { },
+    onChange: () => {},
     underlayWidthLeft: 0,
     underlayWidthRight: 0,
-    overSwipe: 20,
+    overSwipe: 20
   };
 
   state = {
-    swipeDirection: null as 'left' | 'right' | null,
+    swipeDirection: null as "left" | "right" | null
   };
 
   clock = new Clock();
@@ -73,7 +73,7 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     finished: new Value(0),
     position: new Value(0),
     velocity: new Value(0),
-    time: new Value(0),
+    time: new Value(0)
   };
 
   // Spring animation config
@@ -86,17 +86,23 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     stiffness: 100,
     overshootClamping: false,
     restSpeedThreshold: 0.5,
-    restDisplacementThreshold: 0.5,
+    restDisplacementThreshold: 0.5
   };
 
   panX = new Value(0);
 
-  hasLeft = greaterThan(this.props.underlayWidthLeft, 0)
-  hasRight = greaterThan(this.props.underlayWidthRight, 0)
+  hasLeft = greaterThan(this.props.underlayWidthLeft, 0);
+  hasRight = greaterThan(this.props.underlayWidthRight, 0);
   swipingLeft = lessThan(this.animState.position, 0);
   swipingRight = greaterThan(this.animState.position, 0);
-  percentOpenLeft = cond(this.swipingLeft, divide(abs(this.animState.position), this.props.underlayWidthLeft))
-  percentOpenRight = cond(this.swipingRight, divide(abs(this.animState.position), this.props.underlayWidthRight))
+  percentOpenLeft = cond(
+    this.swipingLeft,
+    divide(abs(this.animState.position), this.props.underlayWidthLeft)
+  );
+  percentOpenRight = cond(
+    this.swipingRight,
+    divide(abs(this.animState.position), this.props.underlayWidthRight)
+  );
   isSwiping = or(this.swipingLeft, this.swipingRight);
 
   leftActive = or(
@@ -105,10 +111,10 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   );
 
   onSwipeLeftChange = ([isSwiping]: ReadonlyArray<number>) => {
-    if (isSwiping) this.setState({ swipeDirection: 'left' });
+    if (isSwiping) this.setState({ swipeDirection: "left" });
   };
   onSwipeRightChange = ([isSwiping]: ReadonlyArray<number>) => {
-    if (isSwiping) this.setState({ swipeDirection: 'right' });
+    if (isSwiping) this.setState({ swipeDirection: "right" });
   };
   onIsSwipingChange = ([isSwiping]: ReadonlyArray<number>) => {
     if (!isSwiping) this.setState({ swipeDirection: null });
@@ -147,9 +153,9 @@ class SwipeRow<T> extends React.Component<Props<T>> {
 
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
-  open = (direction: 'left' | 'right') => {
-    if (direction === 'left') this.openLeftFlag.setValue(1);
-    else if (direction === 'right') this.openRightFlag.setValue(1);
+  open = (direction: "left" | "right") => {
+    if (direction === "left") this.openLeftFlag.setValue(1);
+    else if (direction === "right") this.openRightFlag.setValue(1);
   };
 
   closeFlag = new Value<number>(0);
@@ -181,12 +187,12 @@ class SwipeRow<T> extends React.Component<Props<T>> {
                   this.animConfig.toValue,
                   cond(this.exceedsThreshold, this.underlayPosition, 0)
                 ),
-                startClock(this.clock),
+                startClock(this.clock)
               ]
-            ),
-          ]),
-        ]),
-    },
+            )
+          ])
+        ])
+    }
   ]);
 
   maxTranslate = cond(
@@ -222,12 +228,12 @@ class SwipeRow<T> extends React.Component<Props<T>> {
               set(
                 this.animState.position,
                 add(translationX, this.prevTranslate)
-              ),
+              )
               // If swipe distance exceeds threshold, delete item
             ]
-          ),
-        ]),
-    },
+          )
+        ])
+    }
   ]);
 
   runCode = () =>
@@ -238,17 +244,17 @@ class SwipeRow<T> extends React.Component<Props<T>> {
           multiply(-1, this.props.underlayWidthLeft)
         ),
         startClock(this.clock),
-        set(this.openLeftFlag, 0),
+        set(this.openLeftFlag, 0)
       ]),
       cond(this.openRightFlag, [
         set(this.animConfig.toValue, this.props.underlayWidthRight),
         startClock(this.clock),
-        set(this.openRightFlag, 0),
+        set(this.openRightFlag, 0)
       ]),
       cond(this.closeFlag, [
         set(this.animConfig.toValue, 0),
         startClock(this.clock),
-        set(this.closeFlag, 0),
+        set(this.closeFlag, 0)
       ]),
       onChange(
         this.swipingLeft,
@@ -271,9 +277,9 @@ class SwipeRow<T> extends React.Component<Props<T>> {
             call([this.animState.position], this.onClose),
             call([this.animState.position], this.onOpen)
           ),
-          set(this.animState.finished, 0),
-        ]),
-      ]),
+          set(this.animState.finished, 0)
+        ])
+      ])
     ]);
 
   render() {
@@ -281,13 +287,14 @@ class SwipeRow<T> extends React.Component<Props<T>> {
       item,
       children,
       renderUnderlayLeft = () => null,
-      renderUnderlayRight = () => null,
+      renderUnderlayRight = () => null
     } = this.props;
     return (
       <>
         <Animated.View
-          pointerEvents={this.state.swipeDirection === 'left' ? 'auto' : 'none'}
-          style={[styles.underlay, { opacity: this.leftActive }]}>
+          pointerEvents={this.state.swipeDirection === "left" ? "auto" : "none"}
+          style={[styles.underlay, { opacity: this.leftActive }]}
+        >
           {renderUnderlayLeft({
             item,
             percentOpen: this.percentOpenLeft,
@@ -297,25 +304,28 @@ class SwipeRow<T> extends React.Component<Props<T>> {
         </Animated.View>
         <Animated.View
           pointerEvents={
-            this.state.swipeDirection === 'right' ? 'auto' : 'none'
+            this.state.swipeDirection === "right" ? "auto" : "none"
           }
-          style={[styles.underlay, { opacity: not(this.leftActive) }]}>
+          style={[styles.underlay, { opacity: not(this.leftActive) }]}
+        >
           {renderUnderlayRight({
             item,
             percentOpen: this.percentOpenRight,
             open: () => this.open("right"),
             close: this.close
           })}
-          </Animated.View>
+        </Animated.View>
         <PanGestureHandler
           minDeltaX={10}
           onGestureEvent={this.onPanEvent}
-          onHandlerStateChange={this.onHandlerStateChange}>
+          onHandlerStateChange={this.onHandlerStateChange}
+        >
           <Animated.View
             style={{
               flex: 1,
-              transform: [{ translateX: this.animState.position }],
-            }}>
+              transform: [{ translateX: this.animState.position }]
+            }}
+          >
             <Animated.Code>{this.runCode}</Animated.Code>
             {children}
           </Animated.View>
@@ -329,6 +339,6 @@ export default SwipeRow;
 
 const styles = StyleSheet.create({
   underlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
+    ...StyleSheet.absoluteFillObject
+  }
 });
