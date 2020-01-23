@@ -52,6 +52,8 @@ type Props<T> = {
   onChange: (params: { open: boolean | "left" | "right" }) => void;
   direction?: "left" | "right";
   overSwipe: number;
+  animationConfig?: Partial<Animated.SpringConfig>;
+  activationThreshold?: number;
 };
 
 class SwipeRow<T> extends React.Component<Props<T>> {
@@ -59,7 +61,9 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     onChange: () => {},
     underlayWidthLeft: 0,
     underlayWidthRight: 0,
-    overSwipe: 20
+    overSwipe: 20,
+    animationConfig: {},
+    activationThreshold: 20
   };
 
   state = {
@@ -86,7 +90,8 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     stiffness: 100,
     overshootClamping: false,
     restSpeedThreshold: 0.5,
-    restDisplacementThreshold: 0.5
+    restDisplacementThreshold: 0.5,
+    ...this.props.animationConfig
   };
 
   panX = new Value(0);
@@ -166,6 +171,7 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   };
 
   onClose = () => {
+    this.setState({ swipeDirection: null });
     this.props.onChange({ open: false });
   };
 
@@ -287,12 +293,25 @@ class SwipeRow<T> extends React.Component<Props<T>> {
       item,
       children,
       renderUnderlayLeft = () => null,
-      renderUnderlayRight = () => null
+      renderUnderlayRight = () => null,
+      underlayWidthLeft,
+      underlayWidthRight,
+      activationThreshold = 20
     } = this.props;
+    const { swipeDirection } = this.state;
+    const isSwiping = !!this.state.swipeDirection;
+    const hasLeft = underlayWidthLeft > 0;
+    const hasRight = underlayWidthRight > 0;
+    const activeOffsetL =
+      hasLeft || isSwiping ? -activationThreshold : -Infinity;
+    const activeOffsetR =
+      hasRight || isSwiping ? activationThreshold : Infinity;
+    const activeOffsetX = [activeOffsetL, activeOffsetR];
+
     return (
       <>
         <Animated.View
-          pointerEvents={this.state.swipeDirection === "left" ? "auto" : "none"}
+          pointerEvents={swipeDirection === "left" ? "auto" : "none"}
           style={[styles.underlay, { opacity: this.leftActive }]}
         >
           {renderUnderlayLeft({
@@ -303,9 +322,7 @@ class SwipeRow<T> extends React.Component<Props<T>> {
           })}
         </Animated.View>
         <Animated.View
-          pointerEvents={
-            this.state.swipeDirection === "right" ? "auto" : "none"
-          }
+          pointerEvents={swipeDirection === "right" ? "auto" : "none"}
           style={[styles.underlay, { opacity: not(this.leftActive) }]}
         >
           {renderUnderlayRight({
@@ -316,7 +333,7 @@ class SwipeRow<T> extends React.Component<Props<T>> {
           })}
         </Animated.View>
         <PanGestureHandler
-          minDeltaX={10}
+          activeOffsetX={activeOffsetX}
           onGestureEvent={this.onPanEvent}
           onHandlerStateChange={this.onHandlerStateChange}
         >
