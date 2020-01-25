@@ -156,21 +156,35 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     this.underlayWidth
   );
 
+  openResolve: () => void;
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
-  open = (direction: "left" | "right") => {
-    if (direction === "left") this.openLeftFlag.setValue(1);
-    else if (direction === "right") this.openRightFlag.setValue(1);
-  };
+  open = (direction: "left" | "right") =>
+    new Promise(resolve => {
+      // Make sure any previous promises are resolved before reassignment
+      if (this.openResolve) this.openResolve();
+      this.openResolve = resolve;
+      if (direction === "left") this.openLeftFlag.setValue(1);
+      else if (direction === "right") this.openRightFlag.setValue(1);
+    });
 
+  closeResolve: () => void;
   closeFlag = new Value<number>(0);
-  close = () => this.closeFlag.setValue(1);
+  close = () =>
+    new Promise(resolve => {
+      // Make sure any previous promises are resolved before reassignment
+      if (this.closeResolve) this.closeResolve();
+      this.closeResolve = resolve;
+      this.closeFlag.setValue(1);
+    });
 
   onOpen = () => {
+    if (this.openResolve) this.openResolve();
     this.props.onChange({ open: this.state.swipeDirection || false });
   };
 
   onClose = () => {
+    if (this.closeResolve) this.closeResolve();
     this.setState({ swipeDirection: null });
     this.props.onChange({ open: false });
   };
