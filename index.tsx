@@ -56,7 +56,7 @@ type Props<T> = {
   activationThreshold?: number;
 };
 
-class SwipeRow<T> extends React.Component<Props<T>> {
+class SwipeableItem<T> extends React.Component<Props<T>> {
   static defaultProps = {
     onChange: () => {},
     underlayWidthLeft: 0,
@@ -366,7 +366,7 @@ class SwipeRow<T> extends React.Component<Props<T>> {
   }
 }
 
-export default SwipeRow;
+export default SwipeableItem;
 
 const styles = StyleSheet.create({
   underlay: {
