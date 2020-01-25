@@ -303,9 +303,9 @@ class SwipeRow<T> extends React.Component<Props<T>> {
     const hasLeft = underlayWidthLeft > 0;
     const hasRight = underlayWidthRight > 0;
     const activeOffsetL =
-      hasLeft || isSwiping ? -activationThreshold : -Infinity;
+      hasLeft || isSwiping ? -activationThreshold : -Number.MAX_VALUE;
     const activeOffsetR =
-      hasRight || isSwiping ? activationThreshold : Infinity;
+      hasRight || isSwiping ? activationThreshold : Number.MAX_VALUE;
     const activeOffsetX = [activeOffsetL, activeOffsetR];
 
     return (
