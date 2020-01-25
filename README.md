@@ -17,15 +17,17 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 
 _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left_. So what do you name these things? I have decided to name everything according to swipe direction. Therefore, a swipe left reveals the `renderUnderlayLeft()` component with width `underlayWidthLeft`. Not perfect but it works.
 
-| Name                  | Type                                                                                                                | Description                                                       |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------- |
-| `renderUnderlayLeft`  | `(params: { item: T, percentOpen: Animated.Node<number>, open: () => void, close: () => void }) => React.ReactNode` | Component to be rendered underneath row on left swipe.            |
-| `renderUnderlayRight` | `(params: { item: T, percentOpen: Animated.Node<number>, open: () => void, close: () => void }) => React.ReactNode` | Component to be rendered underneath row on left swipe.            |
-| `underlayWidthLeft`   | `number`                                                                                                            | Width of left-swiped underlay.                                    |
-| `underlayWidthRight`  | `number`                                                                                                            | Width of left-swiped underlay.                                    |
-| `onChange`            | `(params: { open: "left" \| "right" \| "null" }) => void`                                                           | Called when row is opened or closed.                              |
-| `swipeEnabled`        | `boolean`                                                                                                           | Enable/disable swipe. Defaults to `true`.                         |
-| `activationThreshold` | `number`                                                                                                            | Distance finger must travel before swipe engages. Defaults to 20. |
+`type RenderUnderlay = (params: { item: T, percentOpen: Animated.Node<number>, open: () => Promise<void>, close: () => Promise<void> }) => React.ReactNode`
+
+| Name                  | Type                                                      | Description                                                       |
+| :-------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------- |
+| `renderUnderlayLeft`  | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.            |
+| `renderUnderlayRight` | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.            |
+| `underlayWidthLeft`   | `number`                                                  | Width of left-swiped underlay.                                    |
+| `underlayWidthRight`  | `number`                                                  | Width of left-swiped underlay.                                    |
+| `onChange`            | `(params: { open: "left" \| "right" \| "null" }) => void` | Called when row is opened or closed.                              |
+| `swipeEnabled`        | `boolean`                                                 | Enable/disable swipe. Defaults to `true`.                         |
+| `activationThreshold` | `number`                                                  | Distance finger must travel before swipe engages. Defaults to 20. |
 
 ### Instance Methods
 
