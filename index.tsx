@@ -54,6 +54,7 @@ type Props<T> = {
   overSwipe: number;
   animationConfig?: Partial<Animated.SpringConfig>;
   activationThreshold?: number;
+  swipeEnabled?: boolean;
 };
 
 class SwipeableItem<T> extends React.Component<Props<T>> {
@@ -63,7 +64,8 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     underlayWidthRight: 0,
     overSwipe: 20,
     animationConfig: {},
-    activationThreshold: 20
+    activationThreshold: 20,
+    swipeEnabled: true
   };
 
   state = {
@@ -310,6 +312,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
       renderUnderlayRight = () => null,
       underlayWidthLeft,
       underlayWidthRight,
+      swipeEnabled,
       activationThreshold = 20
     } = this.props;
     const { swipeDirection } = this.state;
@@ -347,6 +350,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
           })}
         </Animated.View>
         <PanGestureHandler
+          enabled={swipeEnabled}
           activeOffsetX={activeOffsetX}
           onGestureEvent={this.onPanEvent}
           onHandlerStateChange={this.onHandlerStateChange}
