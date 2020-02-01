@@ -35,6 +35,8 @@ const {
   divide
 } = Animated;
 
+const tempResolve = () => {};
+
 type RenderUnderlay<T> = (params: {
   item: T;
   percentOpen: Animated.Node<number>;
@@ -85,7 +87,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   // Spring animation config
   // Determines how "springy" row is when it
   // snaps back into place after released
-  animConfig = {
+  animConfig: Animated.SpringConfig = {
     toValue: new Value(0),
     damping: 20,
     mass: 0.2,
@@ -158,7 +160,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     this.underlayWidth
   );
 
-  openResolve: () => void;
+  openResolve: () => void = tempResolve;
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
   open = (direction: "left" | "right") =>
@@ -170,7 +172,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
       else if (direction === "right") this.openRightFlag.setValue(1);
     });
 
-  closeResolve: () => void;
+  closeResolve: () => void = tempResolve;
   closeFlag = new Value<number>(0);
   close = () =>
     new Promise(resolve => {
@@ -206,7 +208,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
               and(eq(state, GestureState.END), not(clockRunning(this.clock))),
               [
                 set(
-                  this.animConfig.toValue,
+                  this.animConfig.toValue as Animated.Value<number>,
                   cond(this.exceedsThreshold, this.underlayPosition, 0)
                 ),
                 startClock(this.clock)
@@ -262,19 +264,22 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     block([
       cond(this.openLeftFlag, [
         set(
-          this.animConfig.toValue,
+          this.animConfig.toValue as Animated.Value<number>,
           multiply(-1, this.props.underlayWidthLeft)
         ),
         startClock(this.clock),
         set(this.openLeftFlag, 0)
       ]),
       cond(this.openRightFlag, [
-        set(this.animConfig.toValue, this.props.underlayWidthRight),
+        set(
+          this.animConfig.toValue as Animated.Value<number>,
+          this.props.underlayWidthRight
+        ),
         startClock(this.clock),
         set(this.openRightFlag, 0)
       ]),
       cond(this.closeFlag, [
-        set(this.animConfig.toValue, 0),
+        set(this.animConfig.toValue as Animated.Value<number>, 0),
         startClock(this.clock),
         set(this.closeFlag, 0)
       ]),
