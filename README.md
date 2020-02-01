@@ -55,6 +55,9 @@ const itemRef: SwipeableItem | null = null
 if (itemRef) itemRef.open("left")
 ```
 
+### Notes
+Gesture handlers can sometimes capture a gesture unintentionally. If you are using with `react-native-draggable-flatlist` and the list is periodically not scrolling, try adding a small `activationDistance` (see example below).
+
 ### Example
 
 ```javascript
@@ -162,6 +165,7 @@ class App extends React.Component {
     return (
       <View style={styles.container}>
         <DraggableFlatList
+          activationDistance={15} // <-- add if your DraggableFlatList list is not scrolling 
           keyExtractor={item => item.key}
           data={this.state.data}
           renderItem={this.renderItem}
