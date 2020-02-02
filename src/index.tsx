@@ -227,13 +227,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   onHandlerStateChange = event([
     {
       nativeEvent: ({ state }: GestureHandlerStateChangeNativeEvent) =>
-        block([
-          set(this.gestureState, state),
-          cond(
-            eq(this.gestureState, GestureState.BEGAN),
-            set(this.prevTranslate, this.animState.position)
-          )
-        ])
+        set(this.gestureState, state)
     }
   ]);
 
@@ -308,6 +302,13 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
           startClock(this.clock)
         ])
       ]),
+      onChange(
+        this.gestureState,
+        cond(eq(this.gestureState, GestureState.BEGAN), [
+          cond(clockRunning(this.clock), stopClock(this.clock)),
+          set(this.prevTranslate, this.animState.position)
+        ])
+      ),
       onChange(this.isSwiping, call([this.isSwiping], this.onIsSwipingChange)),
       // If the clock is running, increment position in next tick by calling spring()
       cond(clockRunning(this.clock), [
