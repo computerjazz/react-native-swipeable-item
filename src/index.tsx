@@ -69,7 +69,7 @@ type Props<T> = {
   swipeEnabled?: boolean;
 };
 
-class SwipeableItem<T> extends React.Component<Props<T>> {
+class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   static defaultProps = {
     onChange: () => {},
     underlayWidthLeft: 0,
