@@ -71,6 +71,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   };
 
   state = {
+    open: null as "left" | "right" | null,
     swipeDirection: null as "left" | "right" | null
   };
 
@@ -78,17 +79,17 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   prevTranslate = new Value(0);
   gestureState = new Value(GestureState.UNDETERMINED);
   animState = {
-    finished: new Value(0),
-    position: new Value(0),
-    velocity: new Value(0),
-    time: new Value(0)
+    finished: new Value<number>(0),
+    position: new Value<number>(0),
+    velocity: new Value<number>(0),
+    time: new Value<number>(0)
   };
 
   // Spring animation config
   // Determines how "springy" row is when it
   // snaps back into place after released
   animConfig: Animated.SpringConfig = {
-    toValue: new Value(0),
+    toValue: new Value<number>(0),
     damping: 20,
     mass: 0.2,
     stiffness: 100,
@@ -117,6 +118,11 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   leftActive = or(
     this.swipingLeft,
     and(not(this.isSwiping), lessThan(this.panX, 0))
+  );
+
+  isActive = or(
+    eq(this.gestureState, GestureState.ACTIVE),
+    eq(this.gestureState, GestureState.BEGAN)
   );
 
   onSwipeLeftChange = ([isSwiping]: ReadonlyArray<number>) => {
@@ -193,42 +199,29 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     this.props.onChange({ open: false });
   };
 
-  // Called whenever gesture state changes. (User begins/ends pan,
-  // or if the gesture is cancelled/fails for some reason)
+  maxTranslate = cond(
+    this.hasRight,
+    add(this.props.underlayWidthRight, this.props.overSwipe),
+    0
+  );
+  minTranslate = cond(
+    this.hasLeft,
+    multiply(-1, add(this.props.underlayWidthLeft, this.props.overSwipe)),
+    0
+  );
+
   onHandlerStateChange = event([
     {
       nativeEvent: ({ state }: GestureHandlerStateChangeNativeEvent) =>
         block([
-          // Update our animated value that tracks gesture state
           set(this.gestureState, state),
-          // Spring row back into place when user lifts their finger before reaching threshold
-          onChange(this.gestureState, [
-            set(this.prevTranslate, this.animState.position),
-            cond(
-              and(eq(state, GestureState.END), not(clockRunning(this.clock))),
-              [
-                set(
-                  this.animConfig.toValue as Animated.Value<number>,
-                  cond(this.exceedsThreshold, this.underlayPosition, 0)
-                ),
-                startClock(this.clock)
-              ]
-            )
-          ])
+          cond(
+            eq(this.gestureState, GestureState.BEGAN),
+            set(this.prevTranslate, this.animState.position)
+          )
         ])
     }
   ]);
-
-  maxTranslate = cond(
-    this.leftActive,
-    0,
-    cond(this.hasRight, add(this.underlayPosition, this.props.overSwipe), 0)
-  );
-  minTranslate = cond(
-    this.leftActive,
-    cond(this.hasLeft, sub(this.underlayPosition, this.props.overSwipe), 0),
-    0
-  );
 
   onPanEvent = event([
     {
@@ -247,18 +240,20 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
                 this.minTranslate
               )
             ),
-            [
-              // Update our translate animated value as the user pans
-              set(
-                this.animState.position,
-                add(translationX, this.prevTranslate)
-              )
-              // If swipe distance exceeds threshold, delete item
-            ]
+            set(this.animState.position, add(translationX, this.prevTranslate))
           )
         ])
     }
   ]);
+
+  onAnimationEnd = ([position]: readonly number[]) => {
+    if (position === 0) {
+      this.setState({ open: null });
+    } else {
+      this.onOpen();
+      this.setState({ open: position < 0 ? "left" : "right" });
+    }
+  };
 
   runCode = () =>
     block([
@@ -291,19 +286,24 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
         this.swipingRight,
         call([this.swipingRight], this.onSwipeRightChange)
       ),
+      // Spring row back into place when user lifts their finger before reaching threshold
+      onChange(this.isActive, [
+        cond(and(not(this.isActive), not(clockRunning(this.clock))), [
+          set(
+            this.animConfig.toValue as Animated.Value<number>,
+            cond(this.exceedsThreshold, this.underlayPosition, 0)
+          ),
+          startClock(this.clock)
+        ])
+      ]),
       onChange(this.isSwiping, call([this.isSwiping], this.onIsSwipingChange)),
-
       // If the clock is running, increment position in next tick by calling spring()
       cond(clockRunning(this.clock), [
         spring(this.clock, this.animState, this.animConfig),
         // Stop and reset clock when spring is complete
         cond(this.animState.finished, [
           stopClock(this.clock),
-          cond(
-            eq(this.animState.position, 0),
-            call([this.animState.position], this.onClose),
-            call([this.animState.position], this.onOpen)
-          ),
+          call([this.animState.position], this.onAnimationEnd),
           set(this.animState.finished, 0)
         ])
       ])
@@ -320,16 +320,14 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
       swipeEnabled,
       activationThreshold = 20
     } = this.props;
-    const { swipeDirection } = this.state;
-    const isSwiping = !!this.state.swipeDirection;
+    const { swipeDirection, open } = this.state;
     const hasLeft = underlayWidthLeft > 0;
     const hasRight = underlayWidthRight > 0;
     const activeOffsetL =
-      hasLeft || isSwiping ? -activationThreshold : -Number.MAX_VALUE;
+      hasLeft || open === "right" ? -activationThreshold : -Number.MAX_VALUE;
     const activeOffsetR =
-      hasRight || isSwiping ? activationThreshold : Number.MAX_VALUE;
+      hasRight || open === "left" ? activationThreshold : Number.MAX_VALUE;
     const activeOffsetX = [activeOffsetL, activeOffsetR];
-
     return (
       <>
         <Animated.View
