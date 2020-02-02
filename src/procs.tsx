@@ -1,6 +1,6 @@
 import Animated from "react-native-reanimated";
 
-const { proc, spring, Value } = Animated;
+let { proc, spring, Value } = Animated;
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
