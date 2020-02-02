@@ -7,6 +7,7 @@ import {
   GestureHandlerStateChangeNativeEvent
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
+import { springFill } from "./procs";
 const {
   event,
   cond,
@@ -22,7 +23,6 @@ const {
   and,
   startClock,
   stopClock,
-  spring,
   greaterThan,
   greaterOrEq,
   lessThan,
@@ -291,7 +291,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
       onChange(this.isSwiping, call([this.isSwiping], this.onIsSwipingChange)),
       // If the clock is running, increment position in next tick by calling spring()
       cond(clockRunning(this.clock), [
-        spring(this.clock, this.animState, this.animConfig),
+        springFill(this.clock, this.animState, this.animConfig),
         // Stop and reset clock when spring is complete
         cond(this.animState.finished, [
           stopClock(this.clock),
