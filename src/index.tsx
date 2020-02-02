@@ -34,6 +34,12 @@ const {
   divide
 } = Animated;
 
+export enum OpenDirection {
+  LEFT = "left",
+  RIGHT = "right",
+  NONE = 0
+}
+
 const tempResolve = () => {};
 const renderNull = () => null;
 
@@ -51,6 +57,7 @@ type RenderOverlay<T> = (params: {
   openLeft: VoidPromiseFn;
   openRight: VoidPromiseFn;
   close: VoidPromiseFn;
+  openDirection: OpenDirection;
 }) => React.ReactNode;
 
 type Props<T> = {
@@ -61,8 +68,7 @@ type Props<T> = {
   renderUnderlayLeft?: RenderUnderlay<T>;
   underlayWidthRight: number;
   renderUnderlayRight?: RenderUnderlay<T>;
-  onChange: (params: { open: boolean | "left" | "right" }) => void;
-  direction?: "left" | "right";
+  onChange: (params: { open: OpenDirection }) => void;
   overSwipe: number;
   animationConfig?: Partial<Animated.SpringConfig>;
   activationThreshold?: number;
@@ -81,8 +87,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   };
 
   state = {
-    open: null as "left" | "right" | null,
-    swipeDirection: null as "left" | "right" | null
+    openDirection: OpenDirection.NONE,
+    swipeDirection: OpenDirection.NONE
   };
 
   clock = new Clock();
@@ -136,13 +142,13 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   );
 
   onSwipeLeftChange = ([isSwiping]: readonly number[]) => {
-    if (isSwiping) this.setState({ swipeDirection: "left" });
+    if (isSwiping) this.setState({ swipeDirection: OpenDirection.LEFT });
   };
   onSwipeRightChange = ([isSwiping]: readonly number[]) => {
-    if (isSwiping) this.setState({ swipeDirection: "right" });
+    if (isSwiping) this.setState({ swipeDirection: OpenDirection.RIGHT });
   };
   onIsSwipingChange = ([isSwiping]: readonly number[]) => {
-    if (!isSwiping) this.setState({ swipeDirection: null });
+    if (!isSwiping) this.setState({ swipeDirection: OpenDirection.NONE });
   };
 
   absPosition = abs(this.animState.position);
@@ -176,13 +182,14 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   openResolve: () => void = tempResolve;
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
-  open = (direction: "left" | "right") =>
+  open = (direction: OpenDirection) =>
     new Promise<void>(resolve => {
       // Make sure any previous promises are resolved before reassignment
       if (this.openResolve) this.openResolve();
       this.openResolve = resolve;
-      if (direction === "left") this.openLeftFlag.setValue(1);
-      else if (direction === "right") this.openRightFlag.setValue(1);
+      if (direction === OpenDirection.LEFT) this.openLeftFlag.setValue(1);
+      else if (direction === OpenDirection.RIGHT)
+        this.openRightFlag.setValue(1);
     });
 
   closeResolve: () => void = tempResolve;
@@ -197,13 +204,13 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   onOpen = () => {
     if (this.openResolve) this.openResolve();
-    this.props.onChange({ open: this.state.swipeDirection || false });
+    this.props.onChange({ open: this.state.swipeDirection });
   };
 
   onClose = () => {
     if (this.closeResolve) this.closeResolve();
     this.setState({ swipeDirection: null });
-    this.props.onChange({ open: false });
+    this.props.onChange({ open: OpenDirection.NONE });
   };
 
   maxTranslate = cond(
@@ -251,10 +258,12 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   onAnimationEnd = ([position]: readonly number[]) => {
     if (position === 0) {
-      this.setState({ open: null });
+      this.setState({ openDirection: OpenDirection.NONE });
     } else {
       this.onOpen();
-      this.setState({ open: position < 0 ? "left" : "right" });
+      this.setState({
+        openDirection: position < 0 ? OpenDirection.LEFT : OpenDirection.RIGHT
+      });
     }
   };
 
@@ -312,8 +321,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       ])
     ]);
 
-  openLeft = () => this.open("left");
-  openRight = () => this.open("right");
+  openLeft = () => this.open(OpenDirection.LEFT);
+  openRight = () => this.open(OpenDirection.RIGHT);
 
   render() {
     const {
@@ -327,18 +336,24 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       swipeEnabled,
       activationThreshold = 20
     } = this.props;
-    const { swipeDirection, open } = this.state;
+    const { swipeDirection, openDirection } = this.state;
     const hasLeft = underlayWidthLeft > 0;
     const hasRight = underlayWidthRight > 0;
     const activeOffsetL =
-      hasLeft || open === "right" ? -activationThreshold : -Number.MAX_VALUE;
+      hasLeft || openDirection === OpenDirection.RIGHT
+        ? -activationThreshold
+        : -Number.MAX_VALUE;
     const activeOffsetR =
-      hasRight || open === "left" ? activationThreshold : Number.MAX_VALUE;
+      hasRight || openDirection === OpenDirection.LEFT
+        ? activationThreshold
+        : Number.MAX_VALUE;
     const activeOffsetX = [activeOffsetL, activeOffsetR];
     return (
       <>
         <Animated.View
-          pointerEvents={swipeDirection === "left" ? "auto" : "none"}
+          pointerEvents={
+            swipeDirection === OpenDirection.LEFT ? "auto" : "none"
+          }
           style={[styles.underlay, { opacity: this.leftActive }]}
         >
           {renderUnderlayLeft({
@@ -349,7 +364,9 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
           })}
         </Animated.View>
         <Animated.View
-          pointerEvents={swipeDirection === "right" ? "auto" : "none"}
+          pointerEvents={
+            swipeDirection === OpenDirection.RIGHT ? "auto" : "none"
+          }
           style={[styles.underlay, { opacity: not(this.leftActive) }]}
         >
           {renderUnderlayRight({
@@ -377,7 +394,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
               item,
               openLeft: this.openLeft,
               openRight: this.openRight,
-              close: this.close
+              close: this.close,
+              openDirection
             })}
           </Animated.View>
         </PanGestureHandler>
