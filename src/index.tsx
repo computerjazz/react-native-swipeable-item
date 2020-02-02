@@ -17,7 +17,6 @@ const {
   not,
   or,
   abs,
-  sub,
   clockRunning,
   add,
   and,
@@ -125,13 +124,13 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     eq(this.gestureState, GestureState.BEGAN)
   );
 
-  onSwipeLeftChange = ([isSwiping]: ReadonlyArray<number>) => {
+  onSwipeLeftChange = ([isSwiping]: readonly number[]) => {
     if (isSwiping) this.setState({ swipeDirection: "left" });
   };
-  onSwipeRightChange = ([isSwiping]: ReadonlyArray<number>) => {
+  onSwipeRightChange = ([isSwiping]: readonly number[]) => {
     if (isSwiping) this.setState({ swipeDirection: "right" });
   };
-  onIsSwipingChange = ([isSwiping]: ReadonlyArray<number>) => {
+  onIsSwipingChange = ([isSwiping]: readonly number[]) => {
     if (!isSwiping) this.setState({ swipeDirection: null });
   };
 
@@ -156,9 +155,6 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     this.props.underlayWidthLeft,
     this.props.underlayWidthRight
   );
-  isOpen = greaterOrEq(this.absPosition, this.underlayWidth);
-
-  isClosed = lessOrEq(sub(this.absPosition, this.underlayWidth), 0);
 
   underlayPosition = cond(
     this.leftActive,
@@ -223,24 +219,20 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
     }
   ]);
 
+  tempTranslate = new Value<number>(0);
   onPanEvent = event([
     {
       nativeEvent: ({ translationX }: PanGestureHandlerEventExtra) =>
         block([
           set(this.panX, translationX),
+          set(this.tempTranslate, add(translationX, this.prevTranslate)),
           cond(
             and(
               eq(this.gestureState, GestureState.ACTIVE),
-              lessOrEq(
-                add(translationX, this.prevTranslate),
-                this.maxTranslate
-              ),
-              greaterOrEq(
-                add(translationX, this.prevTranslate),
-                this.minTranslate
-              )
+              lessOrEq(this.tempTranslate, this.maxTranslate),
+              greaterOrEq(this.tempTranslate, this.minTranslate)
             ),
-            set(this.animState.position, add(translationX, this.prevTranslate))
+            set(this.animState.position, this.tempTranslate)
           )
         ])
     }
