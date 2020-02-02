@@ -35,17 +35,28 @@ const {
 } = Animated;
 
 const tempResolve = () => {};
+const renderNull = () => null;
+
+type VoidPromiseFn = () => Promise<void>;
 
 type RenderUnderlay<T> = (params: {
   item: T;
   percentOpen: Animated.Node<number>;
-  open: () => void;
-  close: () => void;
+  open: VoidPromiseFn;
+  close: VoidPromiseFn;
+}) => React.ReactNode;
+
+type RenderOverlay<T> = (params: {
+  item: T;
+  openLeft: VoidPromiseFn;
+  openRight: VoidPromiseFn;
+  close: VoidPromiseFn;
 }) => React.ReactNode;
 
 type Props<T> = {
   item: T;
   children: React.ReactNode;
+  renderOverlay?: RenderOverlay<T>;
   underlayWidthLeft: number;
   renderUnderlayLeft?: RenderUnderlay<T>;
   underlayWidthRight: number;
@@ -166,7 +177,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
   open = (direction: "left" | "right") =>
-    new Promise(resolve => {
+    new Promise<void>(resolve => {
       // Make sure any previous promises are resolved before reassignment
       if (this.openResolve) this.openResolve();
       this.openResolve = resolve;
@@ -177,7 +188,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
   closeResolve: () => void = tempResolve;
   closeFlag = new Value<number>(0);
   close = () =>
-    new Promise(resolve => {
+    new Promise<void>(resolve => {
       // Make sure any previous promises are resolved before reassignment
       if (this.closeResolve) this.closeResolve();
       this.closeResolve = resolve;
@@ -301,12 +312,16 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
       ])
     ]);
 
+  openLeft = () => this.open("left");
+  openRight = () => this.open("right");
+
   render() {
     const {
       item,
       children,
-      renderUnderlayLeft = () => null,
-      renderUnderlayRight = () => null,
+      renderOverlay = renderNull,
+      renderUnderlayLeft = renderNull,
+      renderUnderlayRight = renderNull,
       underlayWidthLeft,
       underlayWidthRight,
       swipeEnabled,
@@ -329,7 +344,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
           {renderUnderlayLeft({
             item,
             percentOpen: this.percentOpenLeft,
-            open: () => this.open("left"),
+            open: this.openLeft,
             close: this.close
           })}
         </Animated.View>
@@ -340,7 +355,7 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
           {renderUnderlayRight({
             item,
             percentOpen: this.percentOpenRight,
-            open: () => this.open("right"),
+            open: this.openRight,
             close: this.close
           })}
         </Animated.View>
@@ -358,6 +373,12 @@ class SwipeableItem<T> extends React.Component<Props<T>> {
           >
             <Animated.Code>{this.runCode}</Animated.Code>
             {children}
+            {renderOverlay({
+              item,
+              openLeft: this.openLeft,
+              openRight: this.openRight,
+              close: this.close
+            })}
           </Animated.View>
         </PanGestureHandler>
       </>
