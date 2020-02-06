@@ -302,6 +302,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   onAnimationEnd = ([position, snapPointRaw]: readonly number[]) => {
     if (position === 0) {
+      this.onClose();
       this.setState({ openDirection: OpenDirection.NONE });
     } else {
       this.onOpen(Math.abs(snapPointRaw));
