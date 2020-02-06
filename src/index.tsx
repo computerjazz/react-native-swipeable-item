@@ -96,6 +96,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   clock = new Clock();
   prevTranslate = new Value(0);
   gestureState = new Value(GestureState.UNDETERMINED);
+  velocity = new Value(0);
   animState = {
     finished: new Value<number>(0),
     position: new Value<number>(0),
@@ -199,6 +200,12 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       return new Value(mid);
     });
 
+  // Approximate where item would end up with velocity taken into account
+  velocityModifiedPosition = add(
+    this.animState.position,
+    divide(this.velocity, 20)
+  );
+
   // This beautiful little snippet stolen from
   // https://github.com/osdnk/react-native-reanimated-bottom-sheet/blob/master/src/index.tsx#L364-L373
   currentSnapPoint = (() => {
@@ -206,7 +213,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       i + 1 === this.snapPoints.length
         ? this.snapPoints[i]
         : cond(
-            lessThan(this.animState.position, this.midponts[i]),
+            lessThan(this.velocityModifiedPosition, this.midponts[i]),
             this.snapPoints[i],
             getCurrentSnapPoint(i + 1)
           );
@@ -284,9 +291,10 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   tempTranslate = new Value<number>(0);
   onPanEvent = event([
     {
-      nativeEvent: ({ translationX }: PanGestureHandlerEventExtra) =>
+      nativeEvent: ({ translationX, velocityX }: PanGestureHandlerEventExtra) =>
         block([
           set(this.panX, translationX),
+          set(this.velocity, velocityX),
           set(this.tempTranslate, add(translationX, this.prevTranslate)),
           cond(
             and(
