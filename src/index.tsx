@@ -15,6 +15,7 @@ const {
   block,
   set,
   eq,
+  neq,
   not,
   or,
   abs,
@@ -63,7 +64,7 @@ type RenderOverlay<T> = (params: {
 
 type Props<T> = {
   item: T;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   renderOverlay?: RenderOverlay<T>;
   renderUnderlayLeft?: RenderUnderlay<T>;
   renderUnderlayRight?: RenderUnderlay<T>;
@@ -168,10 +169,13 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     ...this.props.snapPointsLeft!.map(p => p * -1),
     ...this.props.snapPointsRight!
   ]
-    .reduce((acc, cur) => {
-      if (!acc.includes(cur)) acc.push(cur);
-      return acc;
-    }, [] as number[])
+    .reduce(
+      (acc, cur) => {
+        if (!acc.includes(cur)) acc.push(cur);
+        return acc;
+      },
+      [0]
+    )
     .sort()
     .map((val, i, arr) => {
       return new Value(val);
@@ -181,10 +185,13 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     ...this.props.snapPointsLeft!.map(p => p * -1),
     ...this.props.snapPointsRight!
   ]
-    .reduce((acc, cur) => {
-      if (!acc.includes(cur)) acc.push(cur);
-      return acc;
-    }, [] as number[])
+    .reduce(
+      (acc, cur) => {
+        if (!acc.includes(cur)) acc.push(cur);
+        return acc;
+      },
+      [0]
+    )
     .sort()
     .map((val, i, arr) => {
       const isLast = i == arr.length - 1;
@@ -207,28 +214,6 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     return getCurrentSnapPoint();
   })();
 
-  exceedsThresholdLeft = greaterThan(
-    this.absPosition,
-    divide(this.leftWidth, 2)
-  );
-  exceedsThresholdRight = greaterThan(
-    this.absPosition,
-    divide(this.rightWidth, 2)
-  );
-  exceedsThreshold = cond(
-    this.swipingLeft,
-    this.exceedsThresholdLeft,
-    this.exceedsThresholdRight
-  );
-
-  underlayWidth = cond(this.leftActive, this.leftWidth, this.rightWidth);
-
-  underlayPosition = cond(
-    this.leftActive,
-    multiply(this.underlayWidth, -1),
-    this.underlayWidth
-  );
-
   openResolve: () => void = tempResolve;
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
@@ -239,17 +224,19 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       this.openResolve = resolve;
       if (direction === OpenDirection.LEFT) {
         const { snapPointsLeft } = this.props;
-        const snapTo =
-          snapPoint === undefined
-            ? snapPointsLeft![snapPointsLeft!.length - 1]
-            : snapPointsLeft![snapPoint];
+        const isValid =
+          typeof snapPoint === "number" && snapPoint < snapPointsLeft!.length;
+        const snapTo = isValid
+          ? snapPointsLeft![snapPoint!]
+          : snapPointsLeft![snapPointsLeft!.length - 1];
         this.openLeftFlag.setValue(snapTo);
       } else if (direction === OpenDirection.RIGHT) {
         const { snapPointsRight } = this.props;
-        const snapTo =
-          snapPoint === undefined
-            ? snapPointsRight![snapPointsRight!.length - 1]
-            : snapPointsRight![snapPoint];
+        const isValid =
+          typeof snapPoint === "number" && snapPoint < snapPointsRight!.length;
+        const snapTo = isValid
+          ? snapPointsRight![snapPoint!]
+          : snapPointsRight![snapPointsRight!.length - 1];
         this.openRightFlag.setValue(snapTo);
       }
     });
@@ -326,7 +313,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   runCode = () =>
     block([
-      cond(this.openLeftFlag, [
+      cond(neq(this.openLeftFlag, 0), [
         set(
           this.animConfig.toValue as Animated.Value<number>,
           multiply(-1, this.openLeftFlag)
@@ -334,7 +321,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
         startClock(this.clock),
         set(this.openLeftFlag, 0)
       ]),
-      cond(this.openRightFlag, [
+      cond(neq(this.openRightFlag, 0), [
         set(
           this.animConfig.toValue as Animated.Value<number>,
           this.openRightFlag
@@ -342,7 +329,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
         startClock(this.clock),
         set(this.openRightFlag, 0)
       ]),
-      cond(this.closeFlag, [
+      cond(neq(this.closeFlag, 0), [
         set(this.animConfig.toValue as Animated.Value<number>, 0),
         startClock(this.clock),
         set(this.closeFlag, 0)
