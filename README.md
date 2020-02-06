@@ -31,6 +31,12 @@ type RenderOverlay<T> = (params: {
   openRight: () => Promise<void>;
   close: () => Promise<void>;
 }) => React.ReactNode;
+
+enum OpenDirection {
+  LEFT = "left",
+  RIGHT = "right",
+  NONE = 0
+}
 ```
 
 | Name                  | Type                                                      | Description                                                                                                                                  |
@@ -38,9 +44,9 @@ type RenderOverlay<T> = (params: {
 | `renderUnderlayLeft`  | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.                                                                                       |
 | `renderUnderlayRight` | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.                                                                                       |
 | `underlayWidthLeft`   | `number`                                                  | Width of left-swiped underlay.                                                                                                               |
-| `underlayWidthRight`  | `number`                                                  | Width of left-swiped underlay.                                                                                                               |
+| `underlayWidthRight`  | `number`                                                  | Width of right-swiped underlay.                                                                                                               |
 | `renderOverlay`       | `RenderOverlay`                                           | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem. |
-| `onChange`            | `(params: { open: "left" \| "right" \| "null" }) => void` | Called when row is opened or closed.                                                                                                         |
+| `onChange`            | `(params: { open: OpenDirection }) => void` | Called when row is opened or closed.                                                                                                         |
 | `swipeEnabled`        | `boolean`                                                 | Enable/disable swipe. Defaults to `true`.                                                                                                    |
 | `activationThreshold` | `number`                                                  | Distance finger must travel before swipe engages. Defaults to 20.                                                                            |
 
@@ -48,7 +54,7 @@ type RenderOverlay<T> = (params: {
 
 | Name    | Type                                   | Description                                                      |
 | :------ | :------------------------------------- | :--------------------------------------------------------------- |
-| `open`  | `("left" \| "right") => Promise<void>` | Programmatically open left or right. Promise resolves once open. |
+| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT) => Promise<void>` | Programmatically open left or right. Promise resolves once open. |
 | `close` | `() => Promise<void>`                  | Close all. Promise resolves once closed.                         |
 
 ```js
@@ -60,7 +66,7 @@ const itemRef: SwipeableItem | null = null
 <SwipeableItem ref={ref => itemRef = ref} />
 
 ...
-if (itemRef) itemRef.open("left")
+if (itemRef) itemRef.open(OpenDirection.LEFT)
 ```
 
 ### Notes
