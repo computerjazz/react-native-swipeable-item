@@ -7,7 +7,15 @@ import {
   GestureHandlerStateChangeNativeEvent
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { springFill } from "./procs";
+import {
+  springFill,
+  getOpenPct,
+  getLeftActive,
+  getMaxTranslate,
+  getMinTranslate,
+  getIsActive,
+  getOnPanEvent
+} from "./procs";
 const {
   event,
   cond,
@@ -134,25 +142,21 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       ? this.props.snapPointsRight![this.props.snapPointsRight!.length - 1]
       : 0
   );
-  percentOpenLeft = cond(
+
+  percentOpenLeft = getOpenPct(
     this.swipingLeft,
-    divide(abs(this.animState.position), this.leftWidth)
+    this.animState.position,
+    this.leftWidth
   );
-  percentOpenRight = cond(
+  percentOpenRight = getOpenPct(
     this.swipingRight,
-    divide(abs(this.animState.position), this.rightWidth)
+    this.animState.position,
+    this.rightWidth
   );
+
   isSwiping = or(this.swipingLeft, this.swipingRight);
-
-  leftActive = or(
-    this.swipingLeft,
-    and(not(this.isSwiping), lessThan(this.panX, 0))
-  );
-
-  isActive = or(
-    eq(this.gestureState, GestureState.ACTIVE),
-    eq(this.gestureState, GestureState.BEGAN)
-  );
+  leftActive = getLeftActive(this.swipingLeft, this.isSwiping, this.panX);
+  isActive = getIsActive(this.gestureState);
 
   onSwipeLeftChange = ([isSwiping]: readonly number[]) => {
     if (isSwiping) this.setState({ swipeDirection: OpenDirection.LEFT });
@@ -269,16 +273,15 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     this.props.onChange({ open: OpenDirection.NONE, snapPoint: 0 });
   };
 
-  maxTranslate = cond(
+  maxTranslate = getMaxTranslate(
     this.hasRight,
-    add(this.rightWidth, this.props.overSwipe),
-    0
+    this.rightWidth,
+    this.props.overSwipe
   );
-
-  minTranslate = cond(
+  minTranslate = getMinTranslate(
     this.hasLeft,
-    multiply(-1, add(this.leftWidth, this.props.overSwipe)),
-    0
+    this.leftWidth,
+    this.props.overSwipe
   );
 
   onHandlerStateChange = event([
@@ -296,13 +299,12 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
           set(this.panX, translationX),
           set(this.velocity, velocityX),
           set(this.tempTranslate, add(translationX, this.prevTranslate)),
-          cond(
-            and(
-              eq(this.gestureState, GestureState.ACTIVE),
-              lessOrEq(this.tempTranslate, this.maxTranslate),
-              greaterOrEq(this.tempTranslate, this.minTranslate)
-            ),
-            set(this.animState.position, this.tempTranslate)
+          getOnPanEvent(
+            this.gestureState,
+            this.tempTranslate,
+            this.maxTranslate,
+            this.minTranslate,
+            this.animState.position
           )
         ])
     }

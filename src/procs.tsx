@@ -1,6 +1,23 @@
 import Animated from "react-native-reanimated";
-
-let { proc, spring, Value } = Animated;
+import { State as GestureState } from "react-native-gesture-handler";
+const {
+  cond,
+  divide,
+  abs,
+  or,
+  and,
+  not,
+  add,
+  eq,
+  set,
+  lessThan,
+  lessOrEq,
+  greaterOrEq,
+  multiply,
+  proc,
+  spring,
+  Value
+} = Animated;
 
 if (!proc) {
   console.warn("Use reanimated > 1.3 for optimal perf");
@@ -43,6 +60,63 @@ const betterSpring = proc(
         restDisplacementThreshold,
         restSpeedThreshold
       }
+    )
+);
+
+export const getOpenPct = proc(
+  (
+    isSwiping: Animated.Node<number>,
+    pos: Animated.Node<number>,
+    width: Animated.Node<number>
+  ) => cond(isSwiping, divide(abs(pos), width), 0)
+);
+
+export const getLeftActive = proc(
+  (
+    swipingLeft: Animated.Node<number>,
+    isSwiping: Animated.Node<number>,
+    panX: Animated.Node<number>
+  ) => or(swipingLeft, and(not(isSwiping), lessThan(panX, 0)))
+);
+
+export const getMaxTranslate = proc(
+  (
+    hasRight: Animated.Node<number>,
+    rightWidth: Animated.Node<number>,
+    overSwipe: number
+  ) => cond(hasRight, add(rightWidth, overSwipe), 0)
+);
+
+export const getMinTranslate = proc(
+  (
+    hasLeft: Animated.Node<number>,
+    leftWidth: Animated.Node<number>,
+    overSwipe: number
+  ) => cond(hasLeft, multiply(-1, add(leftWidth, overSwipe)), 0)
+);
+
+export const getIsActive = proc((gestureState: Animated.Node<GestureState>) =>
+  or(
+    eq(gestureState, GestureState.ACTIVE),
+    eq(gestureState, GestureState.BEGAN)
+  )
+);
+
+export const getOnPanEvent = proc(
+  (
+    gestureState: Animated.Node<GestureState>,
+    tempTranslate: Animated.Node<number>,
+    maxTranslate: Animated.Node<number>,
+    minTranslate: Animated.Node<number>,
+    pos: Animated.Value<number>
+  ) =>
+    cond(
+      and(
+        eq(gestureState, GestureState.ACTIVE),
+        lessOrEq(tempTranslate, maxTranslate),
+        greaterOrEq(tempTranslate, minTranslate)
+      ),
+      set(pos, tempTranslate)
     )
 );
 
