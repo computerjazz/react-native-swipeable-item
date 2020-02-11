@@ -207,7 +207,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   // Approximate where item would end up with velocity taken into account
   velocityModifiedPosition = add(
     this.animState.position,
-    divide(this.velocity, 20)
+    divide(this.velocity, 10)
   );
 
   // This beautiful little snippet stolen from
