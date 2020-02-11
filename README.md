@@ -39,16 +39,17 @@ enum OpenDirection {
 }
 ```
 
-| Name                  | Type                                                        | Description                                                                                                                                  |
-| :-------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `renderUnderlayLeft`  | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                       |
-| `renderUnderlayRight` | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                       |
-| `snapPointsLeft`      | `number[]`                                                  | Pixel values left-swipe snaps to (eg. [100, 300])                                                                                            |
-| `snapPointsRight`     | `number[]`                                                  | Pixel values right-swipe snaps to (eg. [100, 300])                                                                                           |
-| `renderOverlay`       | `RenderOverlay`                                             | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem. |
-| `onChange`            | `(params: { open: OpenDirection, snapTo: number }) => void` | Called when row is opened or closed.                                                                                                         |
-| `swipeEnabled`        | `boolean`                                                   | Enable/disable swipe. Defaults to `true`.                                                                                                    |
-| `activationThreshold` | `number`                                                    | Distance finger must travel before swipe engages. Defaults to 20.                                                                            |
+| Name                  | Type                                                        | Description                                                                                                                                                              |
+| :-------------------- | :---------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderUnderlayLeft`  | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                                                   |
+| `renderUnderlayRight` | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                                                   |
+| `snapPointsLeft`      | `number[]`                                                  | Pixel values left-swipe snaps to (eg. `[100, 300]`)                                                                                                                      |
+| `snapPointsRight`     | `number[]`                                                  | Pixel values right-swipe snaps to (eg. `[100, 300]`)                                                                                                                     |
+| `renderOverlay`       | `RenderOverlay`                                             | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem.                             |
+| `onChange`            | `(params: { open: OpenDirection, snapTo: number }) => void` | Called when row is opened or closed.                                                                                                                                     |
+| `swipeEnabled`        | `boolean`                                                   | Enable/disable swipe. Defaults to `true`.                                                                                                                                |
+| `activationThreshold` | `number`                                                    | Distance finger must travel before swipe engages. Defaults to 20.                                                                                                        |
+| `swipeDamping`        | `number`                                                    | How much swipe velocity determines snap position. A smaller number means swipe velocity will have a larger effect and row will swipe open more easily. Defaults to `10`. |
 
 ### Instance Methods
 

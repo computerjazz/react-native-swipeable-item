@@ -83,6 +83,7 @@ type Props<T> = {
   swipeEnabled?: boolean;
   snapPointsLeft?: number[];
   snapPointsRight?: number[];
+  swipeDamping?: number;
 };
 
 class SwipeableItem<T> extends React.PureComponent<Props<T>> {
@@ -93,7 +94,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     activationThreshold: 20,
     swipeEnabled: true,
     snapPointsLeft: [],
-    snapPointsRight: []
+    snapPointsRight: [],
+    swipeDamping: 10
   };
 
   state = {
@@ -207,7 +209,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   // Approximate where item would end up with velocity taken into account
   velocityModifiedPosition = add(
     this.animState.position,
-    divide(this.velocity, 10)
+    divide(this.velocity, this.props.swipeDamping!)
   );
 
   // This beautiful little snippet stolen from
