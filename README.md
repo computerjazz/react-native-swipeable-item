@@ -21,14 +21,14 @@ _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left
 type RenderUnderlay<T> = (params: {
   item: T;
   percentOpen: Animated.Node<number>;
-  open: () => Promise<void>;
+  open: (snapToIndex?: number) => Promise<void>;
   close: () => Promise<void>;
 }) => React.ReactNode;
 
 type RenderOverlay<T> = (params: {
   item: T;
-  openLeft: () => Promise<void>;
-  openRight: () => Promise<void>;
+  openLeft: (snapToIndex?: number) => Promise<void>;
+  openRight: (snapToIndex?: number) => Promise<void>;
   close: () => Promise<void>;
 }) => React.ReactNode;
 
@@ -39,23 +39,23 @@ enum OpenDirection {
 }
 ```
 
-| Name                  | Type                                                      | Description                                                                                                                                  |
-| :-------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `renderUnderlayLeft`  | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.                                                                                       |
-| `renderUnderlayRight` | `RenderUnderlay`                                          | Component to be rendered underneath row on left swipe.                                                                                       |
-| `underlayWidthLeft`   | `number`                                                  | Width of left-swiped underlay.                                                                                                               |
-| `underlayWidthRight`  | `number`                                                  | Width of right-swiped underlay.                                                                                                               |
-| `renderOverlay`       | `RenderOverlay`                                           | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem. |
-| `onChange`            | `(params: { open: OpenDirection }) => void` | Called when row is opened or closed.                                                                                                         |
-| `swipeEnabled`        | `boolean`                                                 | Enable/disable swipe. Defaults to `true`.                                                                                                    |
-| `activationThreshold` | `number`                                                  | Distance finger must travel before swipe engages. Defaults to 20.                                                                            |
+| Name                  | Type                                                        | Description                                                                                                                                  |
+| :-------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderUnderlayLeft`  | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                       |
+| `renderUnderlayRight` | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                       |
+| `snapPointsLeft`      | `number[]`                                                  | Pixel values left-swipe snaps to (eg. [100, 300])                                                                                            |
+| `snapPointsRight`     | `number[]`                                                  | Pixel values right-swipe snaps to (eg. [100, 300])                                                                                           |
+| `renderOverlay`       | `RenderOverlay`                                             | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem. |
+| `onChange`            | `(params: { open: OpenDirection, snapTo: number }) => void` | Called when row is opened or closed.                                                                                                         |
+| `swipeEnabled`        | `boolean`                                                   | Enable/disable swipe. Defaults to `true`.                                                                                                    |
+| `activationThreshold` | `number`                                                    | Distance finger must travel before swipe engages. Defaults to 20.                                                                            |
 
 ### Instance Methods
 
-| Name    | Type                                   | Description                                                      |
-| :------ | :------------------------------------- | :--------------------------------------------------------------- |
-| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT) => Promise<void>` | Programmatically open left or right. Promise resolves once open. |
-| `close` | `() => Promise<void>`                  | Close all. Promise resolves once closed.                         |
+| Name    | Type                                                                               | Description                                                      |
+| :------ | :--------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT, snapIndex?: number) => Promise<void>` | Programmatically open left or right. Promise resolves once open. |
+| `close` | `() => Promise<void>`                                                              | Close all. Promise resolves once closed.                         |
 
 ```js
 // Programmatic open example
@@ -83,14 +83,30 @@ import {
   StyleSheet,
   FlatList,
   LayoutAnimation,
-  TouchableOpacity
+  Platform,
+  UIManager,
+  TouchableOpacity,
+  Dimensions
 } from "react-native";
+
+const { width } = Dimensions.get("window");
+
+import { TouchableOpacity as RNGHTouchableOpacity } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import SwipeableItem from "react-native-swipeable-item";
+import SwipeableItem from "./SwipeableItem";
+// import SwipeableItem from 'react-native-swipeable-item';
 import DraggableFlatList from "react-native-draggable-flatlist";
 const { multiply, sub } = Animated;
 
-const NUM_ITEMS = 10;
+const isAndroid = Platform.OS === "android";
+
+if (isAndroid && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const PlatformTouchable = isAndroid ? TouchableOpacity : TouchableOpacity;
+
+const NUM_ITEMS = 3;
 function getColor(i) {
   const multiplier = 255 / (NUM_ITEMS - 1);
   const colorVal = i * multiplier;
@@ -100,7 +116,9 @@ function getColor(i) {
 const initialData = [...Array(NUM_ITEMS)].fill(0).map((d, index) => ({
   text: `Row ${index}`,
   key: `key-${index}`, // Note: It's bad practice to use index as your key. Don't do it in production!
-  backgroundColor: getColor(index)
+  backgroundColor: getColor(index),
+  hasLeft: index % 3 === 0 || index % 3 === 1,
+  hasRight: index % 3 === 0 || index % 3 === 2
 }));
 
 class App extends React.Component {
@@ -121,9 +139,9 @@ class App extends React.Component {
     <Animated.View
       style={[styles.row, styles.underlayLeft, { opacity: percentOpen }]} // Fade in on open
     >
-      <TouchableOpacity onPressOut={() => this.deleteItem(item)}>
+      <PlatformTouchable onPressOut={() => this.deleteItem(item.item)}>
         <Text style={styles.text}>{`[x]`}</Text>
-      </TouchableOpacity>
+      </PlatformTouchable>
     </Animated.View>
   );
 
@@ -137,17 +155,44 @@ class App extends React.Component {
         }
       ]}
     >
-      <TouchableOpacity onPressOut={close}>
+      <PlatformTouchable onPressOut={close}>
         <Text style={styles.text}>CLOSE</Text>
-      </TouchableOpacity>
+      </PlatformTouchable>
     </Animated.View>
   );
+
+  renderOverlay = ({ item, openLeft, openRight, openDirection, close }) => {
+    const { text, backgroundColor, hasLeft, hasRight } = item.item;
+    return (
+      <View style={[styles.row, { backgroundColor }]}>
+        <View style={[styles.flex, { alignItems: "flex-start" }]}>
+          {hasRight && (
+            <PlatformTouchable
+              onPressOut={!!openDirection ? close : () => openRight(1)}
+            >
+              <Text style={styles.text}>{`<`}</Text>
+            </PlatformTouchable>
+          )}
+        </View>
+        <PlatformTouchable style={styles.flex} onLongPress={item.drag}>
+          <Text style={styles.text}>{text}</Text>
+        </PlatformTouchable>
+        <View style={[styles.flex, { alignItems: "flex-end" }]}>
+          {hasLeft && (
+            <PlatformTouchable onPressOut={!!openDirection ? close : openLeft}>
+              <Text style={styles.text}>{`>`}</Text>
+            </PlatformTouchable>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   renderItem = ({ item, index, drag }) => {
     return (
       <SwipeableItem
         key={item.key}
-        item={item}
+        item={{ item, drag }}
         ref={ref => {
           if (ref && !this.itemRefs.get(item.key)) {
             this.itemRefs.set(item.key, ref);
@@ -161,18 +206,13 @@ class App extends React.Component {
             });
           }
         }}
-        overSwipe={1000}
+        overSwipe={50}
         renderUnderlayLeft={this.renderUnderlayLeft}
-        underlayWidthLeft={100}
+        snapPointsLeft={item.hasLeft ? [100] : undefined}
         renderUnderlayRight={this.renderUnderlayRight}
-        underlayWidthRight={200}
-      >
-        <View style={[styles.row, { backgroundColor: item.backgroundColor }]}>
-          <TouchableOpacity onLongPress={drag}>
-            <Text style={styles.text}>{item.text}</Text>
-          </TouchableOpacity>
-        </View>
-      </SwipeableItem>
+        snapPointsRight={item.hasRight ? [100, width] : undefined}
+        renderOverlay={this.renderOverlay}
+      />
     );
   };
 
@@ -180,7 +220,7 @@ class App extends React.Component {
     return (
       <View style={styles.container}>
         <DraggableFlatList
-          activationDistance={15} // <-- add if your DraggableFlatList list is not scrolling
+          activationDistance={15}
           keyExtractor={item => item.key}
           data={this.state.data}
           renderItem={this.renderItem}
@@ -197,11 +237,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
+  flex: {
+    flex: 1
+  },
   row: {
     flexDirection: "row",
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-around",
     padding: 15
   },
   text: {

@@ -15,6 +15,7 @@ const {
   block,
   set,
   eq,
+  neq,
   not,
   or,
   abs,
@@ -31,7 +32,8 @@ const {
   Clock,
   onChange,
   multiply,
-  divide
+  divide,
+  debug
 } = Animated;
 
 export enum OpenDirection {
@@ -62,28 +64,28 @@ type RenderOverlay<T> = (params: {
 
 type Props<T> = {
   item: T;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   renderOverlay?: RenderOverlay<T>;
-  underlayWidthLeft: number;
   renderUnderlayLeft?: RenderUnderlay<T>;
-  underlayWidthRight: number;
   renderUnderlayRight?: RenderUnderlay<T>;
-  onChange: (params: { open: OpenDirection }) => void;
+  onChange: (params: { open: OpenDirection; snapPoint: number }) => void;
   overSwipe: number;
   animationConfig?: Partial<Animated.SpringConfig>;
   activationThreshold?: number;
   swipeEnabled?: boolean;
+  snapPointsLeft?: number[];
+  snapPointsRight?: number[];
 };
 
 class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   static defaultProps = {
     onChange: () => {},
-    underlayWidthLeft: 0,
-    underlayWidthRight: 0,
     overSwipe: 20,
     animationConfig: {},
     activationThreshold: 20,
-    swipeEnabled: true
+    swipeEnabled: true,
+    snapPointsLeft: [],
+    snapPointsRight: []
   };
 
   state = {
@@ -94,6 +96,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   clock = new Clock();
   prevTranslate = new Value(0);
   gestureState = new Value(GestureState.UNDETERMINED);
+  velocity = new Value(0);
   animState = {
     finished: new Value<number>(0),
     position: new Value<number>(0),
@@ -117,17 +120,27 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   panX = new Value(0);
 
-  hasLeft = greaterThan(this.props.underlayWidthLeft, 0);
-  hasRight = greaterThan(this.props.underlayWidthRight, 0);
+  hasLeft = greaterThan(this.props.snapPointsLeft!.length, 0);
+  hasRight = greaterThan(this.props.snapPointsRight!.length, 0);
   swipingLeft = lessThan(this.animState.position, 0);
   swipingRight = greaterThan(this.animState.position, 0);
+  leftWidth = new Value(
+    this.props.snapPointsLeft!.length
+      ? this.props.snapPointsLeft![this.props.snapPointsLeft!.length - 1]
+      : 0
+  );
+  rightWidth = new Value(
+    this.props.snapPointsRight!.length
+      ? this.props.snapPointsRight![this.props.snapPointsRight!.length - 1]
+      : 0
+  );
   percentOpenLeft = cond(
     this.swipingLeft,
-    divide(abs(this.animState.position), this.props.underlayWidthLeft)
+    divide(abs(this.animState.position), this.leftWidth)
   );
   percentOpenRight = cond(
     this.swipingRight,
-    divide(abs(this.animState.position), this.props.underlayWidthRight)
+    divide(abs(this.animState.position), this.rightWidth)
   );
   isSwiping = or(this.swipingLeft, this.swipingRight);
 
@@ -153,43 +166,86 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   absPosition = abs(this.animState.position);
 
-  exceedsThresholdLeft = greaterThan(
-    this.absPosition,
-    divide(this.props.underlayWidthLeft, 2)
-  );
-  exceedsThresholdRight = greaterThan(
-    this.absPosition,
-    divide(this.props.underlayWidthRight, 2)
-  );
-  exceedsThreshold = cond(
-    this.swipingLeft,
-    this.exceedsThresholdLeft,
-    this.exceedsThresholdRight
+  snapPoints = [
+    ...this.props.snapPointsLeft!.map(p => p * -1),
+    ...this.props.snapPointsRight!
+  ]
+    .reduce(
+      (acc, cur) => {
+        if (!acc.includes(cur)) acc.push(cur);
+        return acc;
+      },
+      [0]
+    )
+    .sort()
+    .map((val, i, arr) => {
+      return new Value(val);
+    });
+
+  midponts = [
+    ...this.props.snapPointsLeft!.map(p => p * -1),
+    ...this.props.snapPointsRight!
+  ]
+    .reduce(
+      (acc, cur) => {
+        if (!acc.includes(cur)) acc.push(cur);
+        return acc;
+      },
+      [0]
+    )
+    .sort()
+    .map((val, i, arr) => {
+      const isLast = i == arr.length - 1;
+      const mid = isLast ? val : val + (arr[i + 1] - val) / 2;
+      return new Value(mid);
+    });
+
+  // Approximate where item would end up with velocity taken into account
+  velocityModifiedPosition = add(
+    this.animState.position,
+    divide(this.velocity, 20)
   );
 
-  underlayWidth = cond(
-    this.leftActive,
-    this.props.underlayWidthLeft,
-    this.props.underlayWidthRight
-  );
-
-  underlayPosition = cond(
-    this.leftActive,
-    multiply(this.underlayWidth, -1),
-    this.underlayWidth
-  );
+  // This beautiful little snippet stolen from
+  // https://github.com/osdnk/react-native-reanimated-bottom-sheet/blob/master/src/index.tsx#L364-L373
+  currentSnapPoint = (() => {
+    const getCurrentSnapPoint = (i = 0): Animated.Node<number> =>
+      i + 1 === this.snapPoints.length
+        ? this.snapPoints[i]
+        : cond(
+            lessThan(this.velocityModifiedPosition, this.midponts[i]),
+            this.snapPoints[i],
+            getCurrentSnapPoint(i + 1)
+          );
+    // current snap point desired
+    return getCurrentSnapPoint();
+  })();
 
   openResolve: () => void = tempResolve;
   openLeftFlag = new Value<number>(0);
   openRightFlag = new Value<number>(0);
-  open = (direction: OpenDirection) =>
+  open = (direction: OpenDirection, snapPoint?: number) =>
     new Promise<void>(resolve => {
       // Make sure any previous promises are resolved before reassignment
       if (this.openResolve) this.openResolve();
       this.openResolve = resolve;
-      if (direction === OpenDirection.LEFT) this.openLeftFlag.setValue(1);
-      else if (direction === OpenDirection.RIGHT)
-        this.openRightFlag.setValue(1);
+      if (direction === OpenDirection.LEFT) {
+        const { snapPointsLeft } = this.props;
+        const isValid =
+          typeof snapPoint === "number" && snapPoint < snapPointsLeft!.length;
+        const snapTo = isValid
+          ? snapPointsLeft![snapPoint!]
+          : snapPointsLeft![snapPointsLeft!.length - 1];
+        this.openLeftFlag.setValue(snapTo);
+      } else if (direction === OpenDirection.RIGHT) {
+        const { snapPointsRight } = this.props;
+        const isValid =
+          typeof snapPoint === "number" && snapPoint < snapPointsRight!.length;
+        const snapTo = isValid
+          ? snapPointsRight![snapPoint!]
+          : snapPointsRight![snapPointsRight!.length - 1];
+        this.openRightFlag.setValue(snapTo);
+      }
     });
 
   closeResolve: () => void = tempResolve;
@@ -202,41 +258,43 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       this.closeFlag.setValue(1);
     });
 
-  onOpen = () => {
+  onOpen = (snapPoint: number) => {
     if (this.openResolve) this.openResolve();
-    this.props.onChange({ open: this.state.swipeDirection });
+    this.props.onChange({ open: this.state.swipeDirection, snapPoint });
   };
 
   onClose = () => {
     if (this.closeResolve) this.closeResolve();
     this.setState({ swipeDirection: null });
-    this.props.onChange({ open: OpenDirection.NONE });
+    this.props.onChange({ open: OpenDirection.NONE, snapPoint: 0 });
   };
 
   maxTranslate = cond(
     this.hasRight,
-    add(this.props.underlayWidthRight, this.props.overSwipe),
+    add(this.rightWidth, this.props.overSwipe),
     0
   );
+
   minTranslate = cond(
     this.hasLeft,
-    multiply(-1, add(this.props.underlayWidthLeft, this.props.overSwipe)),
+    multiply(-1, add(this.leftWidth, this.props.overSwipe)),
     0
   );
 
   onHandlerStateChange = event([
     {
       nativeEvent: ({ state }: GestureHandlerStateChangeNativeEvent) =>
-        set(this.gestureState, state)
+        block([set(this.gestureState, state)])
     }
   ]);
 
   tempTranslate = new Value<number>(0);
   onPanEvent = event([
     {
-      nativeEvent: ({ translationX }: PanGestureHandlerEventExtra) =>
+      nativeEvent: ({ translationX, velocityX }: PanGestureHandlerEventExtra) =>
         block([
           set(this.panX, translationX),
+          set(this.velocity, velocityX),
           set(this.tempTranslate, add(translationX, this.prevTranslate)),
           cond(
             and(
@@ -250,11 +308,12 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
     }
   ]);
 
-  onAnimationEnd = ([position]: readonly number[]) => {
+  onAnimationEnd = ([position, snapPointRaw]: readonly number[]) => {
     if (position === 0) {
+      this.onClose();
       this.setState({ openDirection: OpenDirection.NONE });
     } else {
-      this.onOpen();
+      this.onOpen(Math.abs(snapPointRaw));
       this.setState({
         openDirection: position < 0 ? OpenDirection.LEFT : OpenDirection.RIGHT
       });
@@ -263,23 +322,23 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
 
   runCode = () =>
     block([
-      cond(this.openLeftFlag, [
+      cond(neq(this.openLeftFlag, 0), [
         set(
           this.animConfig.toValue as Animated.Value<number>,
-          multiply(-1, this.props.underlayWidthLeft)
+          multiply(-1, this.openLeftFlag)
         ),
         startClock(this.clock),
         set(this.openLeftFlag, 0)
       ]),
-      cond(this.openRightFlag, [
+      cond(neq(this.openRightFlag, 0), [
         set(
           this.animConfig.toValue as Animated.Value<number>,
-          this.props.underlayWidthRight
+          this.openRightFlag
         ),
         startClock(this.clock),
         set(this.openRightFlag, 0)
       ]),
-      cond(this.closeFlag, [
+      cond(neq(this.closeFlag, 0), [
         set(this.animConfig.toValue as Animated.Value<number>, 0),
         startClock(this.clock),
         set(this.closeFlag, 0)
@@ -297,7 +356,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
         cond(and(not(this.isActive), not(clockRunning(this.clock))), [
           set(
             this.animConfig.toValue as Animated.Value<number>,
-            cond(this.exceedsThreshold, this.underlayPosition, 0)
+            this.currentSnapPoint
           ),
           startClock(this.clock)
         ])
@@ -316,14 +375,17 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
         // Stop and reset clock when spring is complete
         cond(this.animState.finished, [
           stopClock(this.clock),
-          call([this.animState.position], this.onAnimationEnd),
+          call(
+            [this.animState.position, this.currentSnapPoint],
+            this.onAnimationEnd
+          ),
           set(this.animState.finished, 0)
         ])
       ])
     ]);
 
-  openLeft = () => this.open(OpenDirection.LEFT);
-  openRight = () => this.open(OpenDirection.RIGHT);
+  openLeft = (snapPoint?: number) => this.open(OpenDirection.LEFT, snapPoint);
+  openRight = (snapPoint?: number) => this.open(OpenDirection.RIGHT, snapPoint);
 
   render() {
     const {
@@ -332,14 +394,14 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       renderOverlay = renderNull,
       renderUnderlayLeft = renderNull,
       renderUnderlayRight = renderNull,
-      underlayWidthLeft,
-      underlayWidthRight,
+      snapPointsLeft,
+      snapPointsRight,
       swipeEnabled,
       activationThreshold = 20
     } = this.props;
     const { swipeDirection, openDirection } = this.state;
-    const hasLeft = underlayWidthLeft > 0;
-    const hasRight = underlayWidthRight > 0;
+    const hasLeft = !!snapPointsLeft!.length;
+    const hasRight = !!snapPointsRight!.length;
     const activeOffsetL =
       hasLeft || openDirection === OpenDirection.RIGHT
         ? -activationThreshold
