@@ -1,6 +1,6 @@
 import Animated from "react-native-reanimated";
 import { State as GestureState } from "react-native-gesture-handler";
-const {
+let {
   cond,
   divide,
   abs,
