@@ -55,14 +55,14 @@ const renderNull = () => null;
 
 type VoidPromiseFn = () => Promise<void>;
 
-type RenderUnderlay<T> = (params: {
+export type RenderUnderlay<T> = (params: {
   item: T;
   percentOpen: Animated.Node<number>;
   open: VoidPromiseFn;
   close: VoidPromiseFn;
 }) => React.ReactNode;
 
-type RenderOverlay<T> = (params: {
+export type RenderOverlay<T> = (params: {
   item: T;
   openLeft: VoidPromiseFn;
   openRight: VoidPromiseFn;
