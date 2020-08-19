@@ -83,7 +83,7 @@ export const getMaxTranslate = proc(
   (
     hasRight: Animated.Node<number>,
     rightWidth: Animated.Node<number>,
-    overSwipe: number
+    overSwipe: Animated.Adaptable<number>
   ) => cond(hasRight, add(rightWidth, overSwipe), 0)
 );
 
@@ -91,7 +91,7 @@ export const getMinTranslate = proc(
   (
     hasLeft: Animated.Node<number>,
     leftWidth: Animated.Node<number>,
-    overSwipe: number
+    overSwipe: Animated.Adaptable<number>
   ) => cond(hasLeft, multiply(-1, add(leftWidth, overSwipe)), 0)
 );
 
