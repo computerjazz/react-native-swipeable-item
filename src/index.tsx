@@ -33,15 +33,12 @@ const {
   startClock,
   stopClock,
   greaterThan,
-  greaterOrEq,
   lessThan,
-  lessOrEq,
   call,
   Clock,
   onChange,
   multiply,
-  divide,
-  debug
+  divide
 } = Animated;
 
 export enum OpenDirection {
@@ -55,20 +52,24 @@ const renderNull = () => null;
 
 type VoidPromiseFn = () => Promise<void>;
 
-export type RenderUnderlay<T> = (params: {
+export type UnderlayParams<T> = {
   item: T;
-  percentOpen: Animated.Node<number>;
   open: VoidPromiseFn;
   close: VoidPromiseFn;
-}) => React.ReactNode;
+  percentOpen: Animated.Node<number>;
+  isGestureActive: Animated.Node<number>;
+};
 
-export type RenderOverlay<T> = (params: {
+export type OverlayParams<T> = {
   item: T;
   openLeft: VoidPromiseFn;
   openRight: VoidPromiseFn;
   close: VoidPromiseFn;
   openDirection: OpenDirection;
-}) => React.ReactNode;
+};
+
+export type RenderUnderlay<T> = (params: UnderlayParams<T>) => React.ReactNode;
+export type RenderOverlay<T> = (params: OverlayParams<T>) => React.ReactNode;
 
 type Props<T> = {
   item: T;
@@ -427,7 +428,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
             item,
             percentOpen: this.percentOpenLeft,
             open: this.openLeft,
-            close: this.close
+            close: this.close,
+            isGestureActive: this.isActive
           })}
         </Animated.View>
         <Animated.View
@@ -440,7 +442,8 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
             item,
             percentOpen: this.percentOpenRight,
             open: this.openRight,
-            close: this.close
+            close: this.close,
+            isGestureActive: this.isActive
           })}
         </Animated.View>
         <PanGestureHandler
