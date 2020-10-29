@@ -94,8 +94,7 @@ const { width } = Dimensions.get("window");
 
 import { TouchableOpacity as RNGHTouchableOpacity } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import SwipeableItem from "./SwipeableItem";
-// import SwipeableItem from 'react-native-swipeable-item';
+import SwipeableItem from 'react-native-swipeable-item';
 import DraggableFlatList from "react-native-draggable-flatlist";
 const { multiply, sub } = Animated;
 
