@@ -458,7 +458,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
               transform: [{ translateX: this.animState.position }]
             }}
           >
-            <Animated.Code>{this.runCode}</Animated.Code>
+            <Animated.Code dependencies={[]}>{this.runCode}</Animated.Code>
             {children}
             {renderOverlay({
               item,
