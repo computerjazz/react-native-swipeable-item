@@ -298,7 +298,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
   onPanEvent = event([
     {
       nativeEvent: ({ translationX, velocityX }: PanGestureHandlerEventExtra) =>
-        block([
+        cond(eq(this.gestureState, GestureState.ACTIVE), [
           set(this.panX, translationX),
           set(this.velocity, velocityX),
           set(this.tempTranslate, add(translationX, this.prevTranslate)),
@@ -363,6 +363,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
             this.animConfig.toValue as Animated.Value<number>,
             this.currentSnapPoint
           ),
+          set(this.velocity, 0),
           startClock(this.clock)
         ])
       ]),
