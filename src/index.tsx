@@ -423,7 +423,10 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
           pointerEvents={
             swipeDirection === OpenDirection.LEFT ? "auto" : "none"
           }
-          style={[styles.underlay, { opacity: this.leftActive }]}
+          style={[
+            styles.underlay,
+            { opacity: cond(greaterThan(this.percentOpenLeft, 0), 1, 0) }
+          ]}
         >
           {renderUnderlayLeft({
             item,
@@ -437,7 +440,10 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
           pointerEvents={
             swipeDirection === OpenDirection.RIGHT ? "auto" : "none"
           }
-          style={[styles.underlay, { opacity: not(this.leftActive) }]}
+          style={[
+            styles.underlay,
+            { opacity: cond(greaterThan(this.percentOpenRight, 0), 1, 0) }
+          ]}
         >
           {renderUnderlayRight({
             item,
