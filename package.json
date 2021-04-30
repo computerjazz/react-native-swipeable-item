@@ -1,6 +1,6 @@
 {
   "name": "react-native-swipeable-item",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "A horizontally swipeable flatlist row compatible with react-native-draggable-flatlist",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
