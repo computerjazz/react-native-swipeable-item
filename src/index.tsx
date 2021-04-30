@@ -184,7 +184,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       },
       [0]
     )
-    .sort()
+    .sort((a, b) => a - b)
     .map((val, i, arr) => {
       return new Value(val);
     });
@@ -200,7 +200,7 @@ class SwipeableItem<T> extends React.PureComponent<Props<T>> {
       },
       [0]
     )
-    .sort()
+    .sort((a, b) => a - b)
     .map((val, i, arr) => {
       const isLast = i == arr.length - 1;
       const mid = isLast ? val : val + (arr[i + 1] - val) / 2;
