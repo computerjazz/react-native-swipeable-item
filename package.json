@@ -34,20 +34,20 @@
   },
   "homepage": "https://github.com/computerjazz/react-native-swipeable-item#readme",
   "peerDependencies": {
-    "react-native": "^0.59.0",
+    "react-native": "^0.62.0",
     "react-native-gesture-handler": "^1.0.0",
-    "react-native-reanimated": "^1.0.0"
+    "react-native-reanimated": "^2.0.0"
   },
   "devDependencies": {
-    "@types/react": "^16.8.8",
-    "@types/react-native": "^0.60.8",
+    "@types/react": "~16.9.35",
+    "@types/react-native": "~0.63.2",
     "husky": "^4.2.0",
     "prettier": "1.19.1",
     "pretty-quick": "^2.0.1",
-    "react": "^16.12.0",
+    "react": "16.13.1",
     "react-native": "^0.61.5",
-    "react-native-gesture-handler": "^1.5.3",
-    "react-native-reanimated": "^1.13.0",
+    "react-native-gesture-handler": "~1.10.2",
+    "react-native-reanimated": "~2.2.0",
     "typescript": "^3.7.3"
   }
 }
