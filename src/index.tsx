@@ -51,7 +51,7 @@ type Props<T> = {
   renderUnderlayRight?: RenderUnderlay<T>;
   onChange: (params: { open: OpenDirection; snapPoint: number }) => void;
   overSwipe: number;
-  animationConfig?: Partial<Animated.SpringConfig>;
+  animationConfig?: Partial<Animated.WithSpringConfig>;
   activationThreshold?: number;
   swipeEnabled?: boolean;
   snapPointsLeft?: number[];
@@ -80,7 +80,8 @@ function SwipeableItem<T>(
     activationThreshold = 20,
     overSwipe = 20,
     swipeDamping = 10,
-    onChange = () => {}
+    onChange = () => {},
+    animationConfig = {}
   } = props;
 
   const springConfig: Animated.WithSpringConfig = {
@@ -89,7 +90,8 @@ function SwipeableItem<T>(
     stiffness: 100,
     overshootClamping: false,
     restSpeedThreshold: 0.5,
-    restDisplacementThreshold: 0.5
+    restDisplacementThreshold: 0.5,
+    ...animationConfig
   };
 
   const [openDirection, setOpenDirection] = useState(OpenDirection.NONE);
