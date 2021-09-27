@@ -1,6 +1,6 @@
 {
   "name": "react-native-swipeable-item",
-  "version": "1.5.7",
+  "version": "2.0.0-beta.0",
   "description": "A horizontally swipeable flatlist row compatible with react-native-draggable-flatlist",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -34,20 +34,20 @@
   },
   "homepage": "https://github.com/computerjazz/react-native-swipeable-item#readme",
   "peerDependencies": {
-    "react-native": "^0.62.0",
-    "react-native-gesture-handler": "^1.0.0",
-    "react-native-reanimated": "^2.0.0"
+    "react-native": ">=0.62.0",
+    "react-native-gesture-handler": ">=1.0.0",
+    "react-native-reanimated": ">=2.0.0"
   },
   "devDependencies": {
-    "@types/react": "~16.9.35",
-    "@types/react-native": "~0.63.2",
+    "@types/react": "^17.0.3",
+    "@types/react-native": "^0.64.2",
     "husky": "^4.2.0",
-    "prettier": "1.19.1",
+    "prettier": "^2.2.1",
     "pretty-quick": "^2.0.1",
-    "react": "16.13.1",
-    "react-native": "^0.61.5",
-    "react-native-gesture-handler": "~1.10.2",
+    "react": "^17.0.2",
+    "react-native": "^0.64.0",
+    "react-native-gesture-handler": "~1.10.3",
     "react-native-reanimated": "~2.2.0",
-    "typescript": "^3.7.3"
+    "typescript": "^4.2.4"
   }
 }
