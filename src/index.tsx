@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 import {
   GestureEvent,
   PanGestureHandler,
-  PanGestureHandlerEventPayload
+  PanGestureHandlerEventPayload,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -11,13 +11,13 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
-  withSpring
+  withSpring,
 } from "react-native-reanimated";
 
 export enum OpenDirection {
   LEFT = "left",
   RIGHT = "right",
-  NONE = 0
+  NONE = "none",
 }
 
 const renderNull = () => null;
@@ -49,8 +49,8 @@ type Props<T> = {
   renderOverlay?: RenderOverlay<T>;
   renderUnderlayLeft?: RenderUnderlay<T>;
   renderUnderlayRight?: RenderUnderlay<T>;
-  onChange: (params: { open: OpenDirection; snapPoint: number }) => void;
-  overSwipe: number;
+  onChange?: (params: { open: OpenDirection; snapPoint: number }) => void;
+  overSwipe?: number;
   animationConfig?: Partial<Animated.WithSpringConfig>;
   activationThreshold?: number;
   swipeEnabled?: boolean;
@@ -81,7 +81,7 @@ function SwipeableItem<T>(
     overSwipe = 20,
     swipeDamping = 10,
     onChange = () => {},
-    animationConfig = {}
+    animationConfig = {},
   } = props;
 
   const springConfig: Animated.WithSpringConfig = {
@@ -91,7 +91,7 @@ function SwipeableItem<T>(
     overshootClamping: false,
     restSpeedThreshold: 0.5,
     restDisplacementThreshold: 0.5,
-    ...animationConfig
+    ...animationConfig,
   };
 
   const [openDirection, setOpenDirection] = useState(OpenDirection.NONE);
@@ -100,12 +100,14 @@ function SwipeableItem<T>(
   const animStatePos = useSharedValue(0);
   const isGestureActive = useSharedValue(false);
 
-  const swipingLeft = useDerivedValue(() => animStatePos.value < 0, [
-    animStatePos
-  ]);
-  const swipingRight = useDerivedValue(() => animStatePos.value > 0, [
-    animStatePos
-  ]);
+  const swipingLeft = useDerivedValue(
+    () => animStatePos.value < 0,
+    [animStatePos]
+  );
+  const swipingRight = useDerivedValue(
+    () => animStatePos.value > 0,
+    [animStatePos]
+  );
 
   const maxSnapPointLeft = -1 * (Math.max(...snapPointsLeft) || 0);
   const maxSnapPointRight = Math.max(...snapPointsRight) || 0;
@@ -151,28 +153,28 @@ function SwipeableItem<T>(
   );
 
   function openLeft(snapPoint?: number) {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
       animStatePos.value = withSpring(
         snapPoint ?? maxSnapPointLeft,
         springConfig,
-        isFinished => {
+        (isFinished) => {
           runOnJS(resolvePromiseIfFinished)(isFinished);
         }
       );
     });
   }
   function openRight(snapPoint?: number) {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
       animStatePos.value = withSpring(
         snapPoint ?? maxSnapPointRight,
         springConfig,
-        isFinished => {
+        (isFinished) => {
           runOnJS(resolvePromiseIfFinished)(isFinished);
         }
       );
@@ -180,11 +182,11 @@ function SwipeableItem<T>(
   }
 
   function close() {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
-      animStatePos.value = withSpring(0, springConfig, isFinished => {
+      animStatePos.value = withSpring(0, springConfig, (isFinished) => {
         runOnJS(resolvePromiseIfFinished)(isFinished);
       });
     });
@@ -196,7 +198,7 @@ function SwipeableItem<T>(
       if (openDirection === OpenDirection.RIGHT) return openRight(snapPoint);
       return close();
     },
-    close
+    close,
   }));
 
   function onAnimationEnd(openDirection: OpenDirection, snapPoint: number) {
@@ -221,7 +223,7 @@ function SwipeableItem<T>(
       );
       animStatePos.value = clampedVal;
     },
-    onEnd: evt => {
+    onEnd: (evt) => {
       isGestureActive.value = false;
 
       // Approximate where item would end up with velocity taken into account
@@ -229,8 +231,14 @@ function SwipeableItem<T>(
         animStatePos.value + evt.velocityX / swipeDamping;
 
       const allSnapPoints = snapPointsLeft
-        .map(p => p * -1)
+        .map((p) => p * -1)
         .concat(snapPointsRight);
+
+      // The user is not required to designate [0] in their snap point array,
+      // but we need to make sure 0 is a snap point.
+
+      allSnapPoints.push(0);
+
       const closestSnapPoint = allSnapPoints.reduce((acc, cur) => {
         const diff = Math.abs(velocityModifiedPosition - cur);
         const prevDiff = Math.abs(velocityModifiedPosition - acc);
@@ -253,7 +261,7 @@ function SwipeableItem<T>(
           springConfig,
           onComplete
         );
-    }
+    },
   });
 
   return (
@@ -267,7 +275,7 @@ function SwipeableItem<T>(
           percentOpen: percentOpenLeft,
           open: openLeft,
           close,
-          isGestureActive
+          isGestureActive,
         })}
       </Animated.View>
       <Animated.View
@@ -279,7 +287,7 @@ function SwipeableItem<T>(
           percentOpen: percentOpenRight,
           open: openRight,
           close: close,
-          isGestureActive
+          isGestureActive,
         })}
       </Animated.View>
       <PanGestureHandler
@@ -294,7 +302,7 @@ function SwipeableItem<T>(
             openLeft: openLeft,
             openRight: openRight,
             close: close,
-            openDirection
+            openDirection,
           })}
         </Animated.View>
       </PanGestureHandler>
@@ -306,9 +314,9 @@ export default React.forwardRef(SwipeableItem);
 
 const styles = StyleSheet.create({
   underlay: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFillObject,
   },
   flex: {
-    flex: 1
-  }
+    flex: 1,
+  },
 });
