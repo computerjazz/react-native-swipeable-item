@@ -113,7 +113,6 @@ function SwipeableItem<T>(
   };
 
   const [openDirection, setOpenDirection] = useState(OpenDirection.NONE);
-  const [swipeDirection] = useState(OpenDirection.NONE);
 
   const animStatePos = useSharedValue(0);
   const isGestureActive = useSharedValue(false);
@@ -340,7 +339,7 @@ function SwipeableItem<T>(
   return (
     <OverlayContext.Provider value={overlayParams}>
       <Animated.View
-        pointerEvents={swipeDirection === OpenDirection.LEFT ? "auto" : "none"}
+        pointerEvents={openDirection === OpenDirection.LEFT ? "auto" : "none"}
         style={[styles.underlay, leftStyle]}
       >
         <UnderlayContext.Provider value={underlayLeftParams}>
@@ -348,7 +347,7 @@ function SwipeableItem<T>(
         </UnderlayContext.Provider>
       </Animated.View>
       <Animated.View
-        pointerEvents={swipeDirection === OpenDirection.RIGHT ? "auto" : "none"}
+        pointerEvents={openDirection === OpenDirection.RIGHT ? "auto" : "none"}
         style={[styles.underlay, rightStyle]}
       >
         <UnderlayContext.Provider value={underlayRightParams}>
