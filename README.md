@@ -65,7 +65,7 @@ enum OpenDirection {
 | Name                     | Type                                                                                           | Description                                                                                                                                                                                                          |
 | :----------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useSwipeableItemParams` | `() => OverlayParams<T> & { open: OpenPromiseFn, percentOpen: Animated.DerivedValue<number> }` | Utility hook that reutrns the same params as the render functions are called with. `open()` and `percentOpen` params reflect the context in which the hook is called (i.e. within an underlay or overlay component). |
-|  |
+|                          |
 
 ```tsx
 function MyUnderlayComponent() {
@@ -110,7 +110,7 @@ Gesture handlers can sometimes capture a gesture unintentionally. If you are usi
 https://snack.expo.io/@computerjazz/swipeable-draggable-list
 
 ```typescript
-import React from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   Text,
   View,
@@ -121,10 +121,13 @@ import {
   Platform,
   UIManager,
 } from "react-native";
-import Animated from "react-native-reanimated";
-import SwipeableItem, { UnderlayParams } from "react-native-swipeable-item";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import SwipeableItem, {
+  useSwipeableItemParams,
+} from "react-native-swipeable-item";
 import DraggableFlatList, {
   RenderItemParams,
+  ScaleDecorator,
 } from "react-native-draggable-flatlist";
 const { multiply, sub } = Animated;
 
@@ -132,8 +135,9 @@ if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental &&
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
+const OVERSWIPE_DIST = 20;
 const NUM_ITEMS = 20;
+
 function getColor(i: number) {
   const multiplier = 255 / (NUM_ITEMS - 1);
   const colorVal = i * multiplier;
@@ -150,80 +154,65 @@ type Item = {
 const initialData: Item[] = [...Array(NUM_ITEMS)].fill(0).map((d, index) => {
   const backgroundColor = getColor(index);
   return {
-    text: `Row ${index}`,
+    text: `row ${index}d`,
     key: `key-${backgroundColor}`,
     backgroundColor,
     height: 100,
   };
 });
 
-class App extends React.Component {
-  state = {
-    data: initialData,
-  };
+function App() {
+  const [data, setData] = useState(initialData);
+  const itemRefs = useRef(new Map());
 
-  itemRefs = new Map();
+  const renderItem = useCallback((params: RenderItemParams<Item>) => {
+    return <RowItem {...params} itemRefs={itemRefs} />;
+  }, []);
 
-  deleteItem = (item: Item) => {
-    const updatedData = this.state.data.filter((d) => d !== item);
-    // Animate list to close gap when item is deleted
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
-    this.setState({ data: updatedData });
-  };
-
-  renderUnderlayLeft = ({ item, percentOpen }: UnderlayParams<Item>) => (
-    <Animated.View
-      style={[styles.row, styles.underlayLeft, { opacity: percentOpen }]} // Fade in on open
-    >
-      <TouchableOpacity onPressOut={() => this.deleteItem(item)}>
-        <Text style={styles.text}>{`[x]`}</Text>
-      </TouchableOpacity>
-    </Animated.View>
+  return (
+    <View style={styles.container}>
+      <DraggableFlatList
+        keyExtractor={(item) => item.key}
+        data={data}
+        renderItem={renderItem}
+        onDragEnd={({ data }) => setData(data)}
+        activationDistance={20}
+      />
+    </View>
   );
+}
 
-  renderUnderlayRight = ({
-    item,
-    percentOpen,
-    open,
-    close,
-  }: UnderlayParams<Item>) => (
-    <Animated.View
-      style={[
-        styles.row,
-        styles.underlayRight,
-        {
-          transform: [{ translateX: multiply(sub(1, percentOpen), -100) }], // Translate from left on open
-        },
-      ]}
-    >
-      <TouchableOpacity onPressOut={close}>
-        <Text style={styles.text}>CLOSE</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
+export default App;
 
-  renderItem = ({ item, index, drag }: RenderItemParams<Item>) => {
-    return (
+type RowItemProps = {
+  item: Item;
+  drag: () => void;
+  itemRefs: React.MutableRefObject<Map<any, any>>;
+};
+
+function RowItem({ item, itemRefs, drag }: RowItemProps) {
+  return (
+    <ScaleDecorator>
       <SwipeableItem
         key={item.key}
         item={item}
         ref={(ref) => {
-          if (ref && !this.itemRefs.get(item.key)) {
-            this.itemRefs.set(item.key, ref);
+          if (ref && !itemRefs.current.get(item.key)) {
+            itemRefs.current.set(item.key, ref);
           }
         }}
         onChange={({ open }) => {
           if (open) {
             // Close all other open items
-            [...this.itemRefs.entries()].forEach(([key, ref]) => {
+            [...itemRefs.current.entries()].forEach(([key, ref]) => {
               if (key !== item.key && ref) ref.close();
             });
           }
         }}
-        overSwipe={20}
-        renderUnderlayLeft={this.renderUnderlayLeft}
-        renderUnderlayRight={this.renderUnderlayRight}
-        snapPointsLeft={[150]}
+        overSwipe={OVERSWIPE_DIST}
+        renderUnderlayLeft={() => <UnderlayLeft drag={drag} />}
+        renderUnderlayRight={() => <UnderlayRight />}
+        snapPointsLeft={[50, 150, 175]}
         snapPointsRight={[175]}
       >
         <View
@@ -232,30 +221,45 @@ class App extends React.Component {
             { backgroundColor: item.backgroundColor, height: item.height },
           ]}
         >
-          <TouchableOpacity onLongPress={drag}>
+          <TouchableOpacity onPressIn={drag}>
             <Text style={styles.text}>{item.text}</Text>
           </TouchableOpacity>
         </View>
       </SwipeableItem>
-    );
-  };
-
-  render() {
-    return (
-      <View style={styles.container}>
-        <DraggableFlatList
-          keyExtractor={(item) => item.key}
-          data={this.state.data}
-          renderItem={this.renderItem}
-          onDragEnd={({ data }) => this.setState({ data })}
-          activationDistance={20}
-        />
-      </View>
-    );
-  }
+    </ScaleDecorator>
+  );
 }
 
-export default App;
+const UnderlayLeft = ({ drag }: { drag: () => void }) => {
+  const { item, percentOpen } = useSwipeableItemParams<Item>();
+  const animStyle = useAnimatedStyle(
+    () => ({
+      opacity: percentOpen.value,
+    }),
+    [percentOpen]
+  );
+
+  return (
+    <Animated.View
+      style={[styles.row, styles.underlayLeft, animStyle]} // Fade in on open
+    >
+      <TouchableOpacity onPressIn={drag}>
+        <Text style={styles.text}>{`[drag]`}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+function UnderlayRight() {
+  const { close } = useSwipeableItemParams<Item>();
+  return (
+    <Animated.View style={[styles.row, styles.underlayRight]}>
+      <TouchableOpacity onPressOut={close}>
+        <Text style={styles.text}>CLOSE</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
