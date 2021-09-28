@@ -1,4 +1,11 @@
-import React, { ForwardedRef, useImperativeHandle, useState } from "react";
+import React, {
+  ForwardedRef,
+  useCallback,
+  useContext,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import { StyleSheet } from "react-native";
 import {
   GestureEvent,
@@ -23,22 +30,33 @@ export enum OpenDirection {
 const renderNull = () => null;
 
 type VoidPromiseFn = () => Promise<void>;
+type OpenPromiseFn = (snapPoint?: number) => Promise<void>;
 
 export type UnderlayParams<T> = {
   item: T;
-  open: VoidPromiseFn;
+  open: OpenPromiseFn;
   close: VoidPromiseFn;
   percentOpen: Animated.DerivedValue<number>;
   isGestureActive: Animated.DerivedValue<boolean>;
+  direction: OpenDirection;
 };
 
 export type OverlayParams<T> = {
   item: T;
-  openLeft: VoidPromiseFn;
-  openRight: VoidPromiseFn;
+  openLeft: OpenPromiseFn;
+  openRight: OpenPromiseFn;
   close: VoidPromiseFn;
   openDirection: OpenDirection;
+  percentOpenLeft: Animated.DerivedValue<number>;
+  percentOpenRight: Animated.DerivedValue<number>;
 };
+
+const UnderlayContext = React.createContext<
+  UnderlayParams<unknown> | undefined
+>(undefined);
+const OverlayContext = React.createContext<OverlayParams<unknown> | undefined>(
+  undefined
+);
 
 export type RenderUnderlay<T> = (params: UnderlayParams<T>) => React.ReactNode;
 export type RenderOverlay<T> = (params: OverlayParams<T>) => React.ReactNode;
@@ -264,31 +282,78 @@ function SwipeableItem<T>(
     },
   });
 
+  const sharedParams = useMemo(
+    () => ({
+      item,
+      isGestureActive,
+      close,
+    }),
+    []
+  );
+
+  const underlayRightParams = useMemo(() => {
+    return {
+      open: openRight,
+      percentOpen: percentOpenRight,
+      direction: OpenDirection.RIGHT,
+      ...sharedParams,
+    };
+  }, [percentOpenRight, openRight, sharedParams]);
+
+  const underlayLeftParams = useMemo(() => {
+    return {
+      open: openLeft,
+      percentOpen: percentOpenLeft,
+      direction: OpenDirection.LEFT,
+      ...sharedParams,
+    };
+  }, [item, percentOpenLeft, openLeft, sharedParams]);
+
+  const overlayParams = useMemo(() => {
+    // If there is only one swipe direction, use it as the 'open' function. Otherwise we need to choose one.
+    const open =
+      hasLeft && !hasRight
+        ? openLeft
+        : hasRight && !hasLeft
+        ? openRight
+        : openLeft;
+
+    return {
+      openLeft: openLeft,
+      openRight: openRight,
+      percentOpenLeft,
+      percentOpenRight,
+      openDirection,
+      open,
+      ...sharedParams,
+    };
+  }, [
+    openLeft,
+    openRight,
+    openDirection,
+    percentOpenLeft,
+    percentOpenRight,
+    hasLeft,
+    hasRight,
+  ]);
+
   return (
-    <>
+    <OverlayContext.Provider value={overlayParams}>
       <Animated.View
         pointerEvents={swipeDirection === OpenDirection.LEFT ? "auto" : "none"}
         style={[styles.underlay, leftStyle]}
       >
-        {renderUnderlayLeft({
-          item,
-          percentOpen: percentOpenLeft,
-          open: openLeft,
-          close,
-          isGestureActive,
-        })}
+        <UnderlayContext.Provider value={underlayLeftParams}>
+          {renderUnderlayLeft(underlayLeftParams)}
+        </UnderlayContext.Provider>
       </Animated.View>
       <Animated.View
         pointerEvents={swipeDirection === OpenDirection.RIGHT ? "auto" : "none"}
         style={[styles.underlay, rightStyle]}
       >
-        {renderUnderlayRight({
-          item,
-          percentOpen: percentOpenRight,
-          open: openRight,
-          close: close,
-          isGestureActive,
-        })}
+        <UnderlayContext.Provider value={underlayRightParams}>
+          {renderUnderlayRight(underlayRightParams)}
+        </UnderlayContext.Provider>
       </Animated.View>
       <PanGestureHandler
         enabled={swipeEnabled}
@@ -297,20 +362,78 @@ function SwipeableItem<T>(
       >
         <Animated.View style={[styles.flex, overlayStyle]}>
           {children}
-          {renderOverlay({
-            item,
-            openLeft: openLeft,
-            openRight: openRight,
-            close: close,
-            openDirection,
-          })}
+          {renderOverlay(overlayParams)}
         </Animated.View>
       </PanGestureHandler>
-    </>
+    </OverlayContext.Provider>
   );
 }
 
 export default React.forwardRef(SwipeableItem);
+
+export function useUnderlayParams<T>() {
+  const underlayContext = useContext(UnderlayContext);
+  if (!underlayContext) {
+    throw new Error(
+      "useUnderlayParams must be called from within an UnderlayContext.Provider!"
+    );
+  }
+  return underlayContext as UnderlayParams<T>;
+}
+
+export function useOverlayParams<T>() {
+  const overlayContext = useContext(OverlayContext);
+  if (!overlayContext) {
+    throw new Error(
+      "useOverlayParams must be called from within an OverlayContext.Provider!"
+    );
+  }
+  return overlayContext as OverlayParams<T>;
+}
+
+export function useSwipeableItemParams<T>() {
+  const overlayContext = useContext(OverlayContext) as
+    | OverlayParams<T>
+    | undefined;
+  if (!overlayContext) {
+    throw new Error(
+      "useOverlayParams must be called from within an OverlayContext.Provider!"
+    );
+  }
+  const underlayContext = useContext(UnderlayContext);
+  const contextDirection = underlayContext?.direction;
+
+  const open = useCallback(
+    (snapPoint?: number, direction?: OpenDirection) => {
+      const openFnLeft = overlayContext.openLeft;
+      const openFnRight = overlayContext.openRight;
+      const openDirection = direction || contextDirection;
+      const openFn =
+        openDirection === OpenDirection.LEFT ? openFnLeft : openFnRight;
+      return openFn(snapPoint);
+    },
+    [overlayContext, contextDirection]
+  );
+
+  const percentOpen = useMemo(() => {
+    if (contextDirection) {
+      // If we're calling from within an underlay context, return the open percentage of that underlay
+      return contextDirection === OpenDirection.LEFT
+        ? overlayContext.percentOpenLeft
+        : overlayContext.percentOpenRight;
+    }
+    // Return the open percentage of the active swipe direction
+    return overlayContext.openDirection === OpenDirection.LEFT
+      ? overlayContext.percentOpenLeft
+      : overlayContext.percentOpenRight;
+  }, [overlayContext]);
+
+  return {
+    ...overlayContext,
+    open,
+    percentOpen,
+  };
+}
 
 const styles = StyleSheet.create({
   underlay: {

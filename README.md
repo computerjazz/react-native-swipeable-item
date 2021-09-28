@@ -17,49 +17,80 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 
 _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left_. So what do you name these things? I have decided to name everything according to swipe direction. Therefore, a swipe left reveals the `renderUnderlayLeft()` component with width `underlayWidthLeft`. Not perfect but it works.
 
-```typescript
-type RenderUnderlay<T> = (params: {
+```ts
+export type UnderlayParams<T> = {
   item: T;
-  percentOpen: Animated.Node<number>;
-  open: (snapToIndex?: number) => Promise<void>;
-  close: () => Promise<void>;
-}) => React.ReactNode;
+  open: OpenPromiseFn;
+  close: VoidPromiseFn;
+  percentOpen: Animated.DerivedValue<number>;
+  isGestureActive: Animated.DerivedValue<boolean>;
+  direction: OpenDirection;
+};
 
-type RenderOverlay<T> = (params: {
+export type OverlayParams<T> = {
   item: T;
-  openLeft: (snapToIndex?: number) => Promise<void>;
-  openRight: (snapToIndex?: number) => Promise<void>;
-  close: () => Promise<void>;
-}) => React.ReactNode;
+  openLeft: OpenPromiseFn;
+  openRight: OpenPromiseFn;
+  close: VoidPromiseFn;
+  openDirection: OpenDirection;
+  percentOpenLeft: Animated.DerivedValue<number>;
+  percentOpenRight: Animated.DerivedValue<number>;
+};
+
+type RenderUnderlay<T> = (params: UnderlayParams<T>) => React.ReactNode;
+
+type RenderOverlay<T> = (params: OverlayParams<T>) => React.ReactNode;
 
 enum OpenDirection {
   LEFT = "left",
   RIGHT = "right",
-  NONE = 0
+  NONE = "none",
 }
 ```
 
-| Name                  | Type                                                        | Description                                                                                                                                                              |
-| :-------------------- | :---------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `renderUnderlayLeft`  | `RenderUnderlay`                                            | Component to be rendered underneath row on left swipe.                                                                                                                   |
-| `renderUnderlayRight` | `RenderUnderlay`                                            | Component to be rendered underneath row on right swipe.                                                                                                                   |
-| `snapPointsLeft`      | `number[]`                                                  | Pixel values left-swipe snaps to (eg. `[100, 300]`)                                                                                                                      |
-| `snapPointsRight`     | `number[]`                                                  | Pixel values right-swipe snaps to (eg. `[100, 300]`)                                                                                                                     |
-| `renderOverlay`       | `RenderOverlay`                                             | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem.                             |
+| Name                  | Type                                                           | Description                                                                                                                                                              |
+| :-------------------- | :------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `renderUnderlayLeft`  | `RenderUnderlay`                                               | Component to be rendered underneath row on left swipe.                                                                                                                   |
+| `renderUnderlayRight` | `RenderUnderlay`                                               | Component to be rendered underneath row on right swipe.                                                                                                                  |
+| `snapPointsLeft`      | `number[]`                                                     | Pixel values left-swipe snaps to (eg. `[100, 300]`)                                                                                                                      |
+| `snapPointsRight`     | `number[]`                                                     | Pixel values right-swipe snaps to (eg. `[100, 300]`)                                                                                                                     |
+| `renderOverlay`       | `RenderOverlay`                                                | Component to be rendered on top. Use if you need access to programmatic open/close methods. May altenatively pass children to SwipeableItem.                             |
 | `onChange`            | `(params: { open: OpenDirection, snapPoint: number }) => void` | Called when row is opened or closed.                                                                                                                                     |
-| `swipeEnabled`        | `boolean`                                                   | Enable/disable swipe. Defaults to `true`.                                                                                                                                |
-| `activationThreshold` | `number`                                                    | Distance finger must travel before swipe engages. Defaults to 20.                                                                                                        |
-| `swipeDamping`        | `number`                                                    | How much swipe velocity determines snap position. A smaller number means swipe velocity will have a larger effect and row will swipe open more easily. Defaults to `10`. |
+| `swipeEnabled`        | `boolean`                                                      | Enable/disable swipe. Defaults to `true`.                                                                                                                                |
+| `activationThreshold` | `number`                                                       | Distance finger must travel before swipe engages. Defaults to 20.                                                                                                        |
+| `swipeDamping`        | `number`                                                       | How much swipe velocity determines snap position. A smaller number means swipe velocity will have a larger effect and row will swipe open more easily. Defaults to `10`. |
+
+### Hooks
+
+| Name                     | Type                                                                                           | Description                                                                                                                                                                                                          |
+| :----------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useSwipeableItemParams` | `() => OverlayParams<T> & { open: OpenPromiseFn, percentOpen: Animated.DerivedValue<number> }` | Utility hook that reutrns the same params as the render functions are called with. `open()` and `percentOpen` params reflect the context in which the hook is called (i.e. within an underlay or overlay component). |
+|  |
+
+```tsx
+function MyUnderlayComponent() {
+  // Underlay components "know" which direction to open, so we don't need to call `openLeft()` or `openRight()`, we can just call 'open()'
+  // Underlay components also receive the `percentOpen` value of their own direction (`percentOpenLeft` or `percentOpenRight`)
+  const swipeableItemParams = useSwipeableItemParams();
+  return <TouchableOpacity onPress={swipeableItemParams.open} />;
+}
+
+function MyOverlayComponent() {
+  // Overlay components get the same params, but have defaults filled in for `open()` and `percentOpen` params.
+  const swipeableItemParams = useSwipeableItemParams();
+  return <TouchableOpacity onPress={swipeableItemParams.openLeft} />;
+}
+```
 
 ### Instance Methods
 
-| Name    | Type                                                                               | Description                                                      |
-| :------ | :--------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT, snapIndex?: number) => Promise<void>` | Programmatically open left or right. Promise resolves once open. |
-| `close` | `() => Promise<void>`                                                              | Close all. Promise resolves once closed.                         |
+| Name    | Type                                                                               | Description                                                  |
+| :------ | :--------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT, snapIndex?: number) => Promise<void>` | Imperatively open left or right. Promise resolves once open. |
+| `close` | `() => Promise<void>`                                                              | Close all. Promise resolves once closed.                     |
 
-```js
-// Programmatic open example
+```tsx
+// Imperative open example
 const itemRef: SwipeableItem | null = null
 
 ...
@@ -79,7 +110,7 @@ Gesture handlers can sometimes capture a gesture unintentionally. If you are usi
 https://snack.expo.io/@computerjazz/swipeable-draggable-list
 
 ```typescript
-import React from 'react';
+import React from "react";
 import {
   Text,
   View,
@@ -89,15 +120,15 @@ import {
   TouchableOpacity,
   Platform,
   UIManager,
-} from 'react-native';
-import Animated from 'react-native-reanimated';
-import SwipeableItem, { UnderlayParams } from 'react-native-swipeable-item';
+} from "react-native";
+import Animated from "react-native-reanimated";
+import SwipeableItem, { UnderlayParams } from "react-native-swipeable-item";
 import DraggableFlatList, {
   RenderItemParams,
-} from 'react-native-draggable-flatlist';
+} from "react-native-draggable-flatlist";
 const { multiply, sub } = Animated;
 
-if (Platform.OS === 'android') {
+if (Platform.OS === "android") {
   UIManager.setLayoutAnimationEnabledExperimental &&
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -163,7 +194,8 @@ class App extends React.Component {
         {
           transform: [{ translateX: multiply(sub(1, percentOpen), -100) }], // Translate from left on open
         },
-      ]}>
+      ]}
+    >
       <TouchableOpacity onPressOut={close}>
         <Text style={styles.text}>CLOSE</Text>
       </TouchableOpacity>
@@ -192,12 +224,14 @@ class App extends React.Component {
         renderUnderlayLeft={this.renderUnderlayLeft}
         renderUnderlayRight={this.renderUnderlayRight}
         snapPointsLeft={[150]}
-        snapPointsRight={[175]}>
+        snapPointsRight={[175]}
+      >
         <View
           style={[
             styles.row,
             { backgroundColor: item.backgroundColor, height: item.height },
-          ]}>
+          ]}
+        >
           <TouchableOpacity onLongPress={drag}>
             <Text style={styles.text}>{item.text}</Text>
           </TouchableOpacity>
@@ -228,27 +262,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 15,
   },
   text: {
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
     fontSize: 32,
   },
   underlayRight: {
     flex: 1,
-    backgroundColor: 'teal',
-    justifyContent: 'flex-start',
+    backgroundColor: "teal",
+    justifyContent: "flex-start",
   },
   underlayLeft: {
     flex: 1,
-    backgroundColor: 'tomato',
-    justifyContent: 'flex-end',
+    backgroundColor: "tomato",
+    justifyContent: "flex-end",
   },
 });
-
 ```
