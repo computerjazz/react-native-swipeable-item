@@ -232,7 +232,6 @@ function SwipeableItem<T>(
       isGestureActive.value = true;
     },
     onActive: (evt, ctx) => {
-      // console.log("onActive!!", evt)
       const rawVal = evt.translationX + ctx.startX;
       const clampedVal = Math.min(
         Math.max(maxTranslateLeft, rawVal),
