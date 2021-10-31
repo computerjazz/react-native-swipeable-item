@@ -1,12 +1,15 @@
 {
   "name": "react-native-swipeable-item",
-  "version": "1.5.7",
+  "version": "2.0.0",
   "description": "A horizontally swipeable flatlist row compatible with react-native-draggable-flatlist",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "lib/commonjs/index",
+  "module": "lib/module/index",
+  "react-native": "src/index.tsx",
+  "types": "lib/typescript/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "typecheck": "tsc --skipLibCheck --noEmit",
+    "build": "bob build"
   },
   "husky": {
     "hooks": {
@@ -23,9 +26,7 @@
     "native",
     "gesture",
     "swipe",
-    "to",
-    "delete",
-    "swipe"
+    "delete"
   ],
   "author": "Daniel Merrill",
   "license": "MIT",
@@ -34,20 +35,30 @@
   },
   "homepage": "https://github.com/computerjazz/react-native-swipeable-item#readme",
   "peerDependencies": {
-    "react-native": "^0.59.0",
-    "react-native-gesture-handler": "^1.0.0",
-    "react-native-reanimated": "^1.0.0"
+    "react-native": ">=0.62.0",
+    "react-native-gesture-handler": ">=1.10.1",
+    "react-native-reanimated": ">=2.0.0"
   },
   "devDependencies": {
-    "@types/react": "^16.8.8",
-    "@types/react-native": "^0.60.8",
+    "@types/react": "^17.0.5",
+    "@types/react-native": "^0.64.5",
     "husky": "^4.2.0",
-    "prettier": "1.19.1",
+    "prettier": "^2.2.1",
     "pretty-quick": "^2.0.1",
-    "react": "^16.12.0",
-    "react-native": "^0.61.5",
-    "react-native-gesture-handler": "^1.5.3",
-    "react-native-reanimated": "^1.13.0",
-    "typescript": "^3.7.3"
+    "react": "~16.9.0",
+    "react-native": "^0.62.2",
+    "react-native-builder-bob": "^0.18.1",
+    "react-native-gesture-handler": "^1.10.3",
+    "react-native-reanimated": "^2.2.0",
+    "typescript": "^4.2.4"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
   }
 }
