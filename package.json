@@ -35,9 +35,9 @@
   },
   "homepage": "https://github.com/computerjazz/react-native-swipeable-item#readme",
   "peerDependencies": {
-    "react-native": ">=0.62.0",
+    "react-native": ">=0.64.0",
     "react-native-gesture-handler": ">=1.10.1",
-    "react-native-reanimated": ">=2.0.0"
+    "react-native-reanimated": ">=2.2.0"
   },
   "devDependencies": {
     "@types/react": "^17.0.5",
