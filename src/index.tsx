@@ -19,6 +19,8 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
   withSpring,
+  interpolate,
+  Extrapolate,
 } from "react-native-reanimated";
 
 export enum OpenDirection {
@@ -126,19 +128,25 @@ function SwipeableItem<T>(
     [animStatePos]
   );
 
-  const maxSnapPointLeft = -1 * (Math.max(...snapPointsLeft) || 0);
-  const maxSnapPointRight = Math.max(...snapPointsRight) || 0;
+  const maxSnapPointLeft =
+    -1 * Math.max(...(snapPointsLeft.length ? snapPointsLeft : [0]));
+  const maxSnapPointRight = Math.max(
+    ...(snapPointsRight.length ? snapPointsRight : [0])
+  );
 
-  const maxTranslateLeft = maxSnapPointLeft - overSwipe;
-  const maxTranslateRight = maxSnapPointRight + overSwipe;
+  // Only include overswipe if the max snap point is greater than zero
+  const maxTranslateLeft =
+    maxSnapPointLeft - (maxSnapPointLeft ? overSwipe : 0);
+  const maxTranslateRight =
+    maxSnapPointRight + (maxSnapPointRight ? overSwipe : 0);
 
   const percentOpenLeft = useDerivedValue(() => {
-    return swipingLeft.value
+    return swipingLeft.value && maxSnapPointLeft
       ? Math.abs(animStatePos.value / maxSnapPointLeft)
       : 0;
   }, []);
   const percentOpenRight = useDerivedValue(() => {
-    return swipingRight.value
+    return swipingRight.value && maxSnapPointRight
       ? Math.abs(animStatePos.value / maxSnapPointRight)
       : 0;
   }, []);
@@ -227,15 +235,17 @@ function SwipeableItem<T>(
     GestureEvent<PanGestureHandlerEventPayload>,
     { startX: number }
   >({
-    onStart: (evt, ctx) => {
+    onStart: (_evt, ctx) => {
       ctx.startX = animStatePos.value;
       isGestureActive.value = true;
     },
     onActive: (evt, ctx) => {
       const rawVal = evt.translationX + ctx.startX;
-      const clampedVal = Math.min(
-        Math.max(maxTranslateLeft, rawVal),
-        maxTranslateRight
+      const clampedVal = interpolate(
+        rawVal,
+        [maxTranslateLeft, maxTranslateRight],
+        [maxTranslateLeft, maxTranslateRight],
+        Extrapolate.CLAMP
       );
       animStatePos.value = clampedVal;
     },
