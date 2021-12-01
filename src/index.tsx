@@ -377,7 +377,9 @@ function SwipeableItem<T>(
   );
 }
 
-export default React.forwardRef(SwipeableItem);
+export default React.forwardRef(SwipeableItem) as <T>(
+  props: Props<T> & { ref?: React.ForwardedRef<SwipeableItemImperativeRef> }
+) => React.ReactElement;
 
 export function useUnderlayParams<T>() {
   const underlayContext = useContext(UnderlayContext);
