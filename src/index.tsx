@@ -407,7 +407,7 @@ export function useSwipeableItemParams<T>() {
     | undefined;
   if (!overlayContext) {
     throw new Error(
-      "useOverlayParams must be called from within an OverlayContext.Provider!"
+      "useSwipeableItemParams must be called from within an OverlayContext.Provider!"
     );
   }
   const underlayContext = useContext(UnderlayContext);
