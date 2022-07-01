@@ -144,12 +144,12 @@ function SwipeableItem<T>(
     return swipingLeft.value && maxSnapPointLeft
       ? Math.abs(animStatePos.value / maxSnapPointLeft)
       : 0;
-  }, []);
+  }, [maxSnapPointLeft]);
   const percentOpenRight = useDerivedValue(() => {
     return swipingRight.value && maxSnapPointRight
       ? Math.abs(animStatePos.value / maxSnapPointRight)
       : 0;
-  }, []);
+  }, [maxSnapPointRight]);
 
   const hasLeft = !!snapPointsLeft?.length;
   const hasRight = !!snapPointsRight?.length;
