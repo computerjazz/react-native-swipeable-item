@@ -56,7 +56,12 @@
     "source": "src",
     "output": "lib",
     "targets": [
-      "commonjs",
+      [
+        "commonjs",
+        {
+          "configFile": "./babel.config.js"
+        }
+      ],
       "module",
       "typescript"
     ]
