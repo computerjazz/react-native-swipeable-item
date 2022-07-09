@@ -21,6 +21,7 @@ import Animated, {
   withSpring,
   interpolate,
   Extrapolate,
+  WithSpringConfig,
 } from "react-native-reanimated";
 
 export enum OpenDirection {
@@ -71,7 +72,7 @@ type Props<T> = {
   renderUnderlayRight?: RenderUnderlay<T>;
   onChange?: (params: { open: OpenDirection; snapPoint: number }) => void;
   overSwipe?: number;
-  animationConfig?: Partial<Animated.WithSpringConfig>;
+  animationConfig?: Partial<WithSpringConfig>;
   activationThreshold?: number;
   swipeEnabled?: boolean;
   snapPointsLeft?: number[];
@@ -104,7 +105,7 @@ function SwipeableItem<T>(
     animationConfig = {},
   } = props;
 
-  const springConfig: Animated.WithSpringConfig = {
+  const springConfig: WithSpringConfig = {
     damping: 20,
     mass: 0.2,
     stiffness: 100,
@@ -186,7 +187,9 @@ function SwipeableItem<T>(
         snapPoint ?? maxSnapPointLeft,
         springConfig,
         (isFinished) => {
-          runOnJS(resolvePromiseIfFinished)(isFinished);
+          if (isFinished) {
+            runOnJS(resolvePromiseIfFinished)(isFinished);
+          }
         }
       );
     });
@@ -200,7 +203,9 @@ function SwipeableItem<T>(
         snapPoint ?? maxSnapPointRight,
         springConfig,
         (isFinished) => {
-          runOnJS(resolvePromiseIfFinished)(isFinished);
+          if (isFinished) {
+            runOnJS(resolvePromiseIfFinished)(isFinished);
+          }
         }
       );
     });
@@ -212,7 +217,9 @@ function SwipeableItem<T>(
         if (isFinished) resolve();
       }
       animStatePos.value = withSpring(0, springConfig, (isFinished) => {
-        runOnJS(resolvePromiseIfFinished)(isFinished);
+        if (isFinished) {
+          runOnJS(resolvePromiseIfFinished)(isFinished);
+        }
       });
     });
   }
