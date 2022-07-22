@@ -18,10 +18,17 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left_. So what do you name these things? I have decided to name everything according to swipe direction. Therefore, a swipe left reveals the `renderUnderlayLeft()` component with width `underlayWidthLeft`. Not perfect but it works.
 
 ```ts
+type OpenCloseOptions = { animated?: boolean };
+type OpenPromiseFn = (
+  snapPoint?: number,
+  options?: OpenCloseOptions
+) => Promise<void>;
+type ClosePromiseFn = (options?: OpenCloseOptions) => Promise<void>;
+
 export type UnderlayParams<T> = {
   item: T;
   open: OpenPromiseFn;
-  close: VoidPromiseFn;
+  close: ClosePromiseFn;
   percentOpen: Animated.DerivedValue<number>;
   isGestureActive: Animated.DerivedValue<boolean>;
   direction: OpenDirection;
@@ -31,21 +38,11 @@ export type OverlayParams<T> = {
   item: T;
   openLeft: OpenPromiseFn;
   openRight: OpenPromiseFn;
-  close: VoidPromiseFn;
+  close: ClosePromiseFn;
   openDirection: OpenDirection;
   percentOpenLeft: Animated.DerivedValue<number>;
   percentOpenRight: Animated.DerivedValue<number>;
 };
-
-type RenderUnderlay<T> = (params: UnderlayParams<T>) => React.ReactNode;
-
-type RenderOverlay<T> = (params: OverlayParams<T>) => React.ReactNode;
-
-enum OpenDirection {
-  LEFT = "left",
-  RIGHT = "right",
-  NONE = "none",
-}
 ```
 
 | Name                  | Type                                                           | Description                                                                                                                                                              |
@@ -84,10 +81,10 @@ function MyOverlayComponent() {
 
 ### Instance Methods
 
-| Name    | Type                                                                               | Description                                                  |
-| :------ | :--------------------------------------------------------------------------------- | :----------------------------------------------------------- |
-| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT, snapIndex?: number) => Promise<void>` | Imperatively open left or right. Promise resolves once open. |
-| `close` | `() => Promise<void>`                                                              | Close all. Promise resolves once closed.                     |
+| Name    | Type                                                                                                                | Description                                                  |
+| :------ | :------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------- |
+| `open`  | `(OpenDirection.LEFT \| OpenDirection.RIGHT, snapIndex?: number, options?: { animated: boolean }) => Promise<void>` | Imperatively open left or right. Promise resolves once open. |
+| `close` | `(options?: { animated?: boolean}) => Promise<void>`                                                                | Close all. Promise resolves once closed.                     |
 
 ```tsx
 // Imperative open example

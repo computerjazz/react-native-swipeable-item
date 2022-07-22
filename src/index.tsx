@@ -32,13 +32,17 @@ export enum OpenDirection {
 
 const renderNull = () => null;
 
-type VoidPromiseFn = () => Promise<void>;
-type OpenPromiseFn = (snapPoint?: number) => Promise<void>;
+type OpenCloseOptions = { animated?: boolean };
+type OpenPromiseFn = (
+  snapPoint?: number,
+  options?: OpenCloseOptions
+) => Promise<void>;
+type ClosePromiseFn = (options?: OpenCloseOptions) => Promise<void>;
 
 export type UnderlayParams<T> = {
   item: T;
   open: OpenPromiseFn;
-  close: VoidPromiseFn;
+  close: ClosePromiseFn;
   percentOpen: Animated.DerivedValue<number>;
   isGestureActive: Animated.DerivedValue<boolean>;
   direction: OpenDirection;
@@ -48,7 +52,7 @@ export type OverlayParams<T> = {
   item: T;
   openLeft: OpenPromiseFn;
   openRight: OpenPromiseFn;
-  close: VoidPromiseFn;
+  close: ClosePromiseFn;
   openDirection: OpenDirection;
   percentOpenLeft: Animated.DerivedValue<number>;
   percentOpenRight: Animated.DerivedValue<number>;
@@ -81,8 +85,12 @@ type Props<T> = {
 };
 
 export type SwipeableItemImperativeRef = {
-  open: (openDirection: OpenDirection, snapPoint?: number) => Promise<void>;
-  close: () => Promise<void>;
+  open: (
+    openDirection: OpenDirection,
+    snapPoint?: number,
+    options?: OpenCloseOptions
+  ) => Promise<void>;
+  close: ClosePromiseFn;
 };
 
 function SwipeableItem<T>(
@@ -178,60 +186,80 @@ function SwipeableItem<T>(
     [animStatePos]
   );
 
-  function openLeft(snapPoint?: number) {
+  const openLeft: OpenPromiseFn = (snapPoint, options) => {
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
-      animStatePos.value = withSpring(
-        snapPoint ?? maxSnapPointLeft,
-        springConfig,
-        (isFinished) => {
+
+      const toValue = snapPoint ?? maxSnapPointLeft;
+
+      if (options?.animated === false) {
+        animStatePos.value = toValue;
+        resolve();
+      } else {
+        animStatePos.value = withSpring(toValue, springConfig, (isFinished) => {
           if (isFinished) {
             runOnJS(resolvePromiseIfFinished)(isFinished);
           }
-        }
-      );
+        });
+      }
     });
-  }
-  function openRight(snapPoint?: number) {
+  };
+
+  const openRight: OpenPromiseFn = (snapPoint, options) => {
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
-      animStatePos.value = withSpring(
-        snapPoint ?? maxSnapPointRight,
-        springConfig,
-        (isFinished) => {
+
+      const toValue = snapPoint ?? maxSnapPointRight;
+
+      if (options?.animated === false) {
+        animStatePos.value = toValue;
+        resolve();
+      } else {
+        animStatePos.value = withSpring(toValue, springConfig, (isFinished) => {
           if (isFinished) {
             runOnJS(resolvePromiseIfFinished)(isFinished);
           }
-        }
-      );
+        });
+      }
     });
-  }
+  };
 
-  function close() {
+  const close: ClosePromiseFn = (options) => {
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
       }
-      animStatePos.value = withSpring(0, springConfig, (isFinished) => {
-        if (isFinished) {
-          runOnJS(resolvePromiseIfFinished)(isFinished);
-        }
-      });
-    });
-  }
 
-  useImperativeHandle(ref, () => ({
-    open: (openDirection: OpenDirection, snapPoint?: number) => {
-      if (openDirection === OpenDirection.LEFT) return openLeft(snapPoint);
-      if (openDirection === OpenDirection.RIGHT) return openRight(snapPoint);
-      return close();
-    },
-    close,
-  }));
+      if (options?.animated === false) {
+        animStatePos.value = 0;
+        resolve();
+      } else {
+        animStatePos.value = withSpring(0, springConfig, (isFinished) => {
+          if (isFinished) {
+            runOnJS(resolvePromiseIfFinished)(isFinished);
+          }
+        });
+      }
+    });
+  };
+
+  useImperativeHandle(ref, () => {
+    const refObject: SwipeableItemImperativeRef = {
+      open: (openDirection, snapPoint, options) => {
+        if (openDirection === OpenDirection.LEFT)
+          return openLeft(snapPoint, options);
+        if (openDirection === OpenDirection.RIGHT)
+          return openRight(snapPoint, options);
+        return close();
+      },
+      close,
+    };
+    return refObject;
+  });
 
   function onAnimationEnd(openDirection: OpenDirection, snapPoint: number) {
     setOpenDirection(openDirection);
