@@ -7,11 +7,7 @@ import React, {
   useState,
 } from "react";
 import { StyleSheet } from "react-native";
-import {
-  GestureEvent,
-  PanGestureHandler,
-  PanGestureHandlerEventPayload,
-} from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
   useAnimatedGestureHandler,
@@ -266,16 +262,15 @@ function SwipeableItem<T>(
     onChange({ open: openDirection, snapPoint });
   }
 
-  const onGestureEvent = useAnimatedGestureHandler<
-    GestureEvent<PanGestureHandlerEventPayload>,
-    { startX: number }
-  >({
-    onStart: (_evt, ctx) => {
-      ctx.startX = animStatePos.value;
+  const startX = useSharedValue(0);
+
+  const gesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = animStatePos.value;
       isGestureActive.value = true;
-    },
-    onActive: (evt, ctx) => {
-      const rawVal = evt.translationX + ctx.startX;
+    })
+    .onUpdate((evt) => {
+      const rawVal = evt.translationX + startX.value;
       const clampedVal = interpolate(
         rawVal,
         [maxTranslateLeft, maxTranslateRight],
@@ -283,8 +278,8 @@ function SwipeableItem<T>(
         Extrapolate.CLAMP
       );
       animStatePos.value = clampedVal;
-    },
-    onEnd: (evt) => {
+    })
+    .onEnd((evt) => {
       isGestureActive.value = false;
 
       // Approximate where item would end up with velocity taken into account
@@ -322,8 +317,9 @@ function SwipeableItem<T>(
           springConfig,
           onComplete
         );
-    },
-  });
+    })
+    .enabled(swipeEnabled !== false)
+    .activeOffsetX(activeOffsetX);
 
   const sharedParams = useMemo(
     () => ({
@@ -398,16 +394,12 @@ function SwipeableItem<T>(
           {renderUnderlayRight(underlayRightParams)}
         </UnderlayContext.Provider>
       </Animated.View>
-      <PanGestureHandler
-        enabled={swipeEnabled}
-        activeOffsetX={activeOffsetX}
-        onGestureEvent={onGestureEvent}
-      >
+      <GestureDetector gesture={gesture}>
         <Animated.View style={[styles.flex, overlayStyle]}>
           {children}
           {renderOverlay(overlayParams)}
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </OverlayContext.Provider>
   );
 }
