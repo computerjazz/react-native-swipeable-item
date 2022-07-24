@@ -10,7 +10,6 @@ import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
-  useAnimatedGestureHandler,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -183,16 +182,17 @@ function SwipeableItem<T>(
   );
 
   const openLeft: OpenPromiseFn = (snapPoint, options) => {
+    const toValue = snapPoint ?? maxSnapPointLeft;
+
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
+        onAnimationEnd(OpenDirection.LEFT, toValue);
       }
-
-      const toValue = snapPoint ?? maxSnapPointLeft;
 
       if (options?.animated === false) {
         animStatePos.value = toValue;
-        resolve();
+        runOnJS(resolvePromiseIfFinished)(true);
       } else {
         animStatePos.value = withSpring(toValue, springConfig, (isFinished) => {
           if (isFinished) {
@@ -204,16 +204,17 @@ function SwipeableItem<T>(
   };
 
   const openRight: OpenPromiseFn = (snapPoint, options) => {
+    const toValue = snapPoint ?? maxSnapPointRight;
+
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
+        onAnimationEnd(OpenDirection.RIGHT, toValue);
       }
-
-      const toValue = snapPoint ?? maxSnapPointRight;
 
       if (options?.animated === false) {
         animStatePos.value = toValue;
-        resolve();
+        runOnJS(resolvePromiseIfFinished)(true);
       } else {
         animStatePos.value = withSpring(toValue, springConfig, (isFinished) => {
           if (isFinished) {
@@ -225,16 +226,18 @@ function SwipeableItem<T>(
   };
 
   const close: ClosePromiseFn = (options) => {
+    const toValue = 0;
     return new Promise<void>((resolve) => {
       function resolvePromiseIfFinished(isFinished: boolean) {
         if (isFinished) resolve();
+        onAnimationEnd(OpenDirection.NONE, toValue);
       }
 
       if (options?.animated === false) {
-        animStatePos.value = 0;
-        resolve();
+        animStatePos.value = toValue;
+        runOnJS(resolvePromiseIfFinished)(true);
       } else {
-        animStatePos.value = withSpring(0, springConfig, (isFinished) => {
+        animStatePos.value = withSpring(toValue, springConfig, (isFinished) => {
           if (isFinished) {
             runOnJS(resolvePromiseIfFinished)(isFinished);
           }
