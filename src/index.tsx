@@ -261,7 +261,6 @@ function SwipeableItem<T>(
   });
 
   function onAnimationEnd(openDirection: OpenDirection, snapPoint: number) {
-    setOpenDirection(openDirection);
     onChange({ open: openDirection, snapPoint });
   }
 
@@ -311,6 +310,7 @@ function SwipeableItem<T>(
             : closestSnapPoint > 0
             ? OpenDirection.RIGHT
             : OpenDirection.LEFT;
+        runOnJS(setOpenDirection)(openDirection)
         runOnJS(onAnimationEnd)(openDirection, Math.abs(closestSnapPoint));
       };
       if (animStatePos.value === closestSnapPoint) onComplete();
