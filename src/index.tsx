@@ -70,7 +70,10 @@ type Props<T> = {
   renderOverlay?: RenderOverlay<T>;
   renderUnderlayLeft?: RenderUnderlay<T>;
   renderUnderlayRight?: RenderUnderlay<T>;
-  onChange?: (params: { open: OpenDirection; snapPoint: number }) => void;
+  onChange?: (params: {
+    openDirection: OpenDirection;
+    snapPoint: number;
+  }) => void;
   overSwipe?: number;
   animationConfig?: Partial<WithSpringConfig>;
   activationThreshold?: number;
@@ -267,7 +270,7 @@ function SwipeableItem<T>(
       openDirection !== OpenDirection.NONE ||
       _openDirection !== OpenDirection.NONE;
     if (didChange) {
-      onChange({ open: _openDirection, snapPoint });
+      onChange({ openDirection: _openDirection, snapPoint });
     }
   }
 
