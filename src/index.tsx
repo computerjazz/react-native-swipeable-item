@@ -17,6 +17,7 @@ import Animated, {
   interpolate,
   Extrapolate,
   WithSpringConfig,
+  useAnimatedProps,
 } from "react-native-reanimated";
 
 export enum OpenDirection {
@@ -260,9 +261,14 @@ function SwipeableItem<T>(
     return refObject;
   });
 
-  function onAnimationEnd(openDirection: OpenDirection, snapPoint: number) {
-    setOpenDirection(openDirection);
-    onChange({ open: openDirection, snapPoint });
+  function onAnimationEnd(_openDirection: OpenDirection, snapPoint: number) {
+    setOpenDirection(_openDirection);
+    const didChange =
+      openDirection !== OpenDirection.NONE ||
+      _openDirection !== OpenDirection.NONE;
+    if (didChange) {
+      onChange({ open: _openDirection, snapPoint });
+    }
   }
 
   const startX = useSharedValue(0);
@@ -305,6 +311,7 @@ function SwipeableItem<T>(
       }, Infinity);
 
       const onComplete = () => {
+        "worklet";
         const openDirection =
           closestSnapPoint === 0
             ? OpenDirection.NONE
@@ -379,10 +386,24 @@ function SwipeableItem<T>(
     hasRight,
   ]);
 
+  const animPropsLeft = useAnimatedProps(() => {
+    return {
+      pointerEvents:
+        percentOpenLeft.value > 0 ? ("auto" as const) : ("none" as const),
+    };
+  }, []);
+
+  const animPropsRight = useAnimatedProps(() => {
+    return {
+      pointerEvents:
+        percentOpenRight.value > 0 ? ("auto" as const) : ("none" as const),
+    };
+  }, []);
+
   return (
     <OverlayContext.Provider value={overlayParams}>
       <Animated.View
-        pointerEvents={openDirection === OpenDirection.LEFT ? "auto" : "none"}
+        animatedProps={animPropsLeft}
         style={[styles.underlay, leftStyle]}
       >
         <UnderlayContext.Provider value={underlayLeftParams}>
@@ -390,7 +411,7 @@ function SwipeableItem<T>(
         </UnderlayContext.Provider>
       </Animated.View>
       <Animated.View
-        pointerEvents={openDirection === OpenDirection.RIGHT ? "auto" : "none"}
+        animatedProps={animPropsRight}
         style={[styles.underlay, rightStyle]}
       >
         <UnderlayContext.Provider value={underlayRightParams}>
