@@ -121,6 +121,7 @@ import {
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import SwipeableItem, {
   useSwipeableItemParams,
+  OpenDirection,
 } from "react-native-swipeable-item";
 import DraggableFlatList, {
   RenderItemParams,
@@ -198,8 +199,8 @@ function RowItem({ item, itemRefs, drag }: RowItemProps) {
             itemRefs.current.set(item.key, ref);
           }
         }}
-        onChange={({ open }) => {
-          if (open) {
+        onChange={({ openDirection }) => {
+          if (openDirection !== OpenDirection.NONE) {
             // Close all other open items
             [...itemRefs.current.entries()].forEach(([key, ref]) => {
               if (key !== item.key && ref) ref.close();
