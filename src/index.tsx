@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -19,6 +19,8 @@ import Animated, {
   WithSpringConfig,
   useAnimatedProps,
 } from "react-native-reanimated";
+
+const isWeb = Platform.OS === "web";
 
 export enum OpenDirection {
   LEFT = "left",
@@ -277,6 +279,13 @@ function SwipeableItem<T>(
   const startX = useSharedValue(0);
 
   const gesture = Gesture.Pan()
+    .onBegin(() => {
+      if (isWeb) {
+        // onStart not called on web
+        startX.value = animStatePos.value;
+        isGestureActive.value = true;
+      }
+    })
     .onStart(() => {
       startX.value = animStatePos.value;
       isGestureActive.value = true;
