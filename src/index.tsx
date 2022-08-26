@@ -282,6 +282,7 @@ function SwipeableItem<T>(
     .onBegin(() => {
       if (isWeb) {
         // onStart not called on web
+        // remove when fixed: https://github.com/software-mansion/react-native-gesture-handler/issues/2057
         startX.value = animStatePos.value;
         isGestureActive.value = true;
       }
