@@ -179,7 +179,7 @@ function SwipeableItem<T>(
   const leftStyle = useAnimatedStyle(() => {
     const opacity = percentOpenLeft.value > 0 ? 1 : 0;
     const zIndex = Math.floor(
-      Math.max(percentOpenLeft.value * 100, MAX_Z_INDEX - 1)
+      Math.min(percentOpenLeft.value * MAX_Z_INDEX, MAX_Z_INDEX - 1)
     );
 
     return isWeb ? { opacity, zIndex } : { opacity };
@@ -187,7 +187,7 @@ function SwipeableItem<T>(
   const rightStyle = useAnimatedStyle(() => {
     const opacity = percentOpenRight.value > 0 ? 1 : 0;
     const zIndex = Math.floor(
-      Math.max(percentOpenRight.value * 100, MAX_Z_INDEX - 1)
+      Math.min(percentOpenRight.value * MAX_Z_INDEX, MAX_Z_INDEX - 1)
     );
 
     return isWeb ? { opacity, zIndex } : { opacity };
