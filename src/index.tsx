@@ -30,6 +30,8 @@ export enum OpenDirection {
 
 const renderNull = () => null;
 
+const MAX_Z_INDEX = 100;
+
 type OpenCloseOptions = { animated?: boolean };
 type OpenPromiseFn = (
   snapPoint?: number,
@@ -174,18 +176,28 @@ function SwipeableItem<T>(
       : Number.MAX_VALUE;
   const activeOffsetX = [activeOffsetL, activeOffsetR];
 
-  const leftStyle = useAnimatedStyle(
-    () => ({ opacity: percentOpenLeft.value > 0 ? 1 : 0 }),
-    []
-  );
-  const rightStyle = useAnimatedStyle(
-    () => ({ opacity: percentOpenRight.value > 0 ? 1 : 0 }),
-    []
-  );
-  const overlayStyle = useAnimatedStyle(
-    () => ({ transform: [{ translateX: animStatePos.value }] }),
-    [animStatePos]
-  );
+  const leftStyle = useAnimatedStyle(() => {
+    const opacity = percentOpenLeft.value > 0 ? 1 : 0;
+    const zIndex = Math.floor(
+      Math.max(percentOpenLeft.value * 100, MAX_Z_INDEX - 1)
+    );
+
+    return isWeb ? { opacity, zIndex } : { opacity };
+  }, []);
+  const rightStyle = useAnimatedStyle(() => {
+    const opacity = percentOpenRight.value > 0 ? 1 : 0;
+    const zIndex = Math.floor(
+      Math.max(percentOpenRight.value * 100, MAX_Z_INDEX - 1)
+    );
+
+    return isWeb ? { opacity, zIndex } : { opacity };
+  }, []);
+  const overlayStyle = useAnimatedStyle(() => {
+    const transform = [{ translateX: animStatePos.value }];
+    const zIndex = MAX_Z_INDEX;
+
+    return isWeb ? { transform, zIndex } : { transform };
+  }, [animStatePos]);
 
   const openLeft: OpenPromiseFn = (snapPoint, options) => {
     const toValue = snapPoint ?? maxSnapPointLeft;
@@ -400,6 +412,8 @@ function SwipeableItem<T>(
   ]);
 
   const animPropsLeft = useAnimatedProps(() => {
+    // useAnimatedProps broken on web: https://github.com/software-mansion/react-native-reanimated/issues/1808
+    if (isWeb) return { pointerEvents: "auto" as const };
     return {
       pointerEvents:
         percentOpenLeft.value > 0 ? ("auto" as const) : ("none" as const),
@@ -407,6 +421,8 @@ function SwipeableItem<T>(
   }, []);
 
   const animPropsRight = useAnimatedProps(() => {
+    // useAnimatedProps broken on web: https://github.com/software-mansion/react-native-reanimated/issues/1808
+    if (isWeb) return { pointerEvents: "auto" as const };
     return {
       pointerEvents:
         percentOpenRight.value > 0 ? ("auto" as const) : ("none" as const),
