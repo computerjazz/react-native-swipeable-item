@@ -104,37 +104,74 @@ Gesture handlers can sometimes capture a gesture unintentionally. If you are usi
 
 ### Example
 
-https://snack.expo.io/@computerjazz/swipeable-draggable-list
+https://snack.expo.io/@computerjazz/swipeable-item
 
 ```typescript
-import React, { useState, useRef, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   Text,
   View,
   StyleSheet,
-  FlatList,
-  LayoutAnimation,
   TouchableOpacity,
-  Platform,
-  UIManager,
+  FlatList,
+  ListRenderItem,
 } from "react-native";
-import Animated, { useAnimatedStyle } from "react-native-reanimated";
 import SwipeableItem, {
   useSwipeableItemParams,
-  OpenDirection,
 } from "react-native-swipeable-item";
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
-const { multiply, sub } = Animated;
 
-if (Platform.OS === "android") {
-  UIManager.setLayoutAnimationEnabledExperimental &&
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+const NUM_ITEMS = 10;
+
+function SimpleExample() {
+  const renderItem: ListRenderItem<Item> = useCallback(({ item }) => {
+    return (
+      <SwipeableItem
+        key={item.key}
+        item={item}
+        renderUnderlayLeft={() => <UnderlayLeft />}
+        snapPointsLeft={[150]}
+      >
+        <View
+          style={[
+            styles.row,
+            { backgroundColor: item.backgroundColor, height: 100 },
+          ]}
+        >
+          <Text style={styles.text}>{`${item.text}`}</Text>
+        </View>
+      </SwipeableItem>
+    );
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        keyExtractor={(item) => item.key}
+        data={initialData}
+        renderItem={renderItem}
+      />
+    </View>
+  );
 }
-const OVERSWIPE_DIST = 20;
-const NUM_ITEMS = 20;
+
+export default SimpleExample;
+
+const UnderlayLeft = () => {
+  const { close } = useSwipeableItemParams<Item>();
+  return (
+    <View style={[styles.row, styles.underlayLeft]}>
+      <TouchableOpacity onPress={() => close()}>
+        <Text style={styles.text}>CLOSE</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+type Item = {
+  key: string;
+  text: string;
+  backgroundColor: string;
+};
 
 function getColor(i: number) {
   const multiplier = 255 / (NUM_ITEMS - 1);
@@ -142,122 +179,14 @@ function getColor(i: number) {
   return `rgb(${colorVal}, ${Math.abs(128 - colorVal)}, ${255 - colorVal})`;
 }
 
-type Item = {
-  key: string;
-  text: string;
-  backgroundColor: string;
-  height: number;
-};
-
 const initialData: Item[] = [...Array(NUM_ITEMS)].fill(0).map((d, index) => {
   const backgroundColor = getColor(index);
   return {
-    text: `row ${index}d`,
+    text: `${index}`,
     key: `key-${backgroundColor}`,
     backgroundColor,
-    height: 100,
   };
 });
-
-function App() {
-  const [data, setData] = useState(initialData);
-  const itemRefs = useRef(new Map());
-
-  const renderItem = useCallback((params: RenderItemParams<Item>) => {
-    return <RowItem {...params} itemRefs={itemRefs} />;
-  }, []);
-
-  return (
-    <View style={styles.container}>
-      <DraggableFlatList
-        keyExtractor={(item) => item.key}
-        data={data}
-        renderItem={renderItem}
-        onDragEnd={({ data }) => setData(data)}
-        activationDistance={20}
-      />
-    </View>
-  );
-}
-
-export default App;
-
-type RowItemProps = {
-  item: Item;
-  drag: () => void;
-  itemRefs: React.MutableRefObject<Map<any, any>>;
-};
-
-function RowItem({ item, itemRefs, drag }: RowItemProps) {
-  return (
-    <ScaleDecorator>
-      <SwipeableItem
-        key={item.key}
-        item={item}
-        ref={(ref) => {
-          if (ref && !itemRefs.current.get(item.key)) {
-            itemRefs.current.set(item.key, ref);
-          }
-        }}
-        onChange={({ openDirection }) => {
-          if (openDirection !== OpenDirection.NONE) {
-            // Close all other open items
-            [...itemRefs.current.entries()].forEach(([key, ref]) => {
-              if (key !== item.key && ref) ref.close();
-            });
-          }
-        }}
-        overSwipe={OVERSWIPE_DIST}
-        renderUnderlayLeft={() => <UnderlayLeft drag={drag} />}
-        renderUnderlayRight={() => <UnderlayRight />}
-        snapPointsLeft={[50, 150, 175]}
-        snapPointsRight={[175]}
-      >
-        <View
-          style={[
-            styles.row,
-            { backgroundColor: item.backgroundColor, height: item.height },
-          ]}
-        >
-          <TouchableOpacity onPressIn={drag}>
-            <Text style={styles.text}>{item.text}</Text>
-          </TouchableOpacity>
-        </View>
-      </SwipeableItem>
-    </ScaleDecorator>
-  );
-}
-
-const UnderlayLeft = ({ drag }: { drag: () => void }) => {
-  const { item, percentOpen } = useSwipeableItemParams<Item>();
-  const animStyle = useAnimatedStyle(
-    () => ({
-      opacity: percentOpen.value,
-    }),
-    [percentOpen]
-  );
-
-  return (
-    <Animated.View
-      style={[styles.row, styles.underlayLeft, animStyle]} // Fade in on open
-    >
-      <TouchableOpacity onPressIn={drag}>
-        <Text style={styles.text}>{`[drag]`}</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-function UnderlayRight() {
-  const { close } = useSwipeableItemParams<Item>();
-  return (
-    <Animated.View style={[styles.row, styles.underlayRight]}>
-      <TouchableOpacity onPressOut={close}>
-        <Text style={styles.text}>CLOSE</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -274,11 +203,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     fontSize: 32,
-  },
-  underlayRight: {
-    flex: 1,
-    backgroundColor: "teal",
-    justifyContent: "flex-start",
   },
   underlayLeft: {
     flex: 1,
