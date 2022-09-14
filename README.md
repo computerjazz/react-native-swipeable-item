@@ -70,10 +70,6 @@ const itemRef: SwipeableItem | null = null
 if (itemRef) itemRef.open(OpenDirection.LEFT)
 ```
 
-### Notes
-
-Gesture handlers can sometimes capture a gesture unintentionally. If you are using with `react-native-draggable-flatlist` and the list is periodically not scrolling, try adding a small `activationDistance` (see example below).
-
 ### Types
 
 ```ts
@@ -103,6 +99,10 @@ export type OverlayParams<T> = {
   percentOpenRight: Animated.DerivedValue<number>;
 };
 ```
+
+### Notes
+
+Gesture handlers can sometimes capture a gesture unintentionally. If you are using with `react-native-draggable-flatlist` and the list is periodically not scrolling, try adding a small `activationDistance` (see the "Advanced" screen in the example snack).
 
 ### Example
 
