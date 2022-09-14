@@ -17,34 +17,6 @@ Compatible with [React Native Draggable Flatlist](https://github.com/computerjaz
 
 _NOTE:_ Naming is hard. When you swipe _right_, you reveal the item on the _left_. So what do you name these things? I have decided to name everything according to swipe direction. Therefore, a swipe left reveals the `renderUnderlayLeft()` component with width `underlayWidthLeft`. Not perfect but it works.
 
-```ts
-type OpenCloseOptions = { animated?: boolean };
-type OpenPromiseFn = (
-  snapPoint?: number,
-  options?: OpenCloseOptions
-) => Promise<void>;
-type ClosePromiseFn = (options?: OpenCloseOptions) => Promise<void>;
-
-export type UnderlayParams<T> = {
-  item: T;
-  open: OpenPromiseFn;
-  close: ClosePromiseFn;
-  percentOpen: Animated.DerivedValue<number>;
-  isGestureActive: Animated.DerivedValue<boolean>;
-  direction: OpenDirection;
-};
-
-export type OverlayParams<T> = {
-  item: T;
-  openLeft: OpenPromiseFn;
-  openRight: OpenPromiseFn;
-  close: ClosePromiseFn;
-  openDirection: OpenDirection;
-  percentOpenLeft: Animated.DerivedValue<number>;
-  percentOpenRight: Animated.DerivedValue<number>;
-};
-```
-
 | Name                  | Type                                                                    | Description                                                                                                                                                              |
 | :-------------------- | :---------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `renderUnderlayLeft`  | `RenderUnderlay`                                                        | Component to be rendered underneath row on left swipe.                                                                                                                   |
@@ -101,6 +73,36 @@ if (itemRef) itemRef.open(OpenDirection.LEFT)
 ### Notes
 
 Gesture handlers can sometimes capture a gesture unintentionally. If you are using with `react-native-draggable-flatlist` and the list is periodically not scrolling, try adding a small `activationDistance` (see example below).
+
+### Types
+
+```ts
+type OpenCloseOptions = { animated?: boolean };
+type OpenPromiseFn = (
+  snapPoint?: number,
+  options?: OpenCloseOptions
+) => Promise<void>;
+type ClosePromiseFn = (options?: OpenCloseOptions) => Promise<void>;
+
+export type UnderlayParams<T> = {
+  item: T;
+  open: OpenPromiseFn;
+  close: ClosePromiseFn;
+  percentOpen: Animated.DerivedValue<number>;
+  isGestureActive: Animated.DerivedValue<boolean>;
+  direction: OpenDirection;
+};
+
+export type OverlayParams<T> = {
+  item: T;
+  openLeft: OpenPromiseFn;
+  openRight: OpenPromiseFn;
+  close: ClosePromiseFn;
+  openDirection: OpenDirection;
+  percentOpenLeft: Animated.DerivedValue<number>;
+  percentOpenRight: Animated.DerivedValue<number>;
+};
+```
 
 ### Example
 
