@@ -60,14 +60,14 @@ function MyOverlayComponent() {
 
 ```tsx
 // Imperative open example
-const itemRef: SwipeableItem | null = null
+const itemRef = useRef<SwipeableItemImperativeRef>(null)
 
 ...
 
-<SwipeableItem ref={ref => itemRef = ref} />
+<SwipeableItem ref={itemRef} />
 
 ...
-if (itemRef) itemRef.open(OpenDirection.LEFT)
+itemRef.current?.open(OpenDirection.LEFT)
 ```
 
 ### Types
